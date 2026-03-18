@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACTR Lab - AI Research & Interaction</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #2563eb; /* 科技蓝 */
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* 深色背景 */
+            --card-bg: rgba(255, 255, 255, 0.05); /* 半透明卡片 */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto; /* 允许小屏幕滚动 */
+        }
+
+        /* 背景装饰球 */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 头部区域 */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* 卡片容器 */
+        .grid-container {
+            display: grid;
+            /* [修改点] 改为 2 列，这样 4 个卡片就是 2x2 排列，非常平衡 */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            width: 90%;
+            max-width: 900px; /* 稍微调窄一点，让2列看起来更紧凑 */
+            animation: fadeInUp 1s ease-out;
+            margin-bottom: 40px;
+        }
+
+        /* 单个卡片 */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 35px 25px; /* 稍微调整内边距 */
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* 垂直居中内容 */
+            min-height: 220px; /* 保证卡片高度一致 */
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.5);
+        }
+
+        /* 图标 Emoji */
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .card:hover .icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 响应式调整 (手机端) */
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr; /* 手机上变为单列 */
+                max-width: 350px;
+            }
+            h1 { font-size: 2.5rem; }
+            body {
+                height: auto;
+                padding: 50px 0;
+                justify-content: flex-start; /* 手机上防止内容被切掉 */
+            }
+        }
+
+        /* 动画 */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow"></div>
+
+    <header>
+        <h1>ACTR Lab</h1>
+        <p class="subtitle">AI Chatbot for Teaching and Research</p>
+    </header>
+
+    <div class="grid-container">
+
+         <a href="https://group.bitterlylab.com" target="_blank" class="card">
+            <div class="icon">💬</div>
+            <h2>AI Group Chat</h2>
+            <p>Real-time collaborative communication platform for teams.</p>
+        </a>
+
+        <a href="/admin" class="card">
+            <div class="icon">⛽</div>
+            <h2>AI Games</h2>
+            <p>Interactive Game Theory simulations. <br>Start <strong>Gas Station Game</strong>.</p>
+        </a>
+
+        <a href="https://app.bitterlylab.com" target="_blank" class="card">
+            <div class="icon">🤖</div>
+            <h2>AI Chatbot</h2>
+            <p>Smart conversational agent powered by LLM.<br>Visit <strong>Bitterly Lab</strong>.</p>
+        </a>
+
+        <a href="#" class="card">
+            <div class="icon">✨</div>
+            <h2>AI Assistant</h2>
+            <p>Personalized teaching assistant for course management & feedback.</p>
+        </a>
+
+    </div>
+
+    <footer style="margin-top: 40px; color: #475569; font-size: 0.8rem;">
+        &copy; 2026 ACTR Lab. All rights reserved.
+    </footer>
+
+</body>
+</html>

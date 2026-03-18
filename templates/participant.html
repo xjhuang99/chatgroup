@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    /* --- VARIABLES --- */
+    :root { --blue-team: #2563eb; --red-team: #dc2626; --bg-gray: #f8fafc; --primary: #2563eb; }
+
+    /* --- LAYOUT --- */
+    .page-section { display: none; width: 100%; animation: fadeIn 0.4s ease-out; }
+    #login-screen { display: block; } /* Default visible */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .game-layout { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: stretch; margin-top: 20px; }
+
+    /* Left & Right Columns */
+    #game-container { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display:flex; flex-direction:column; }
+    #chat-container { flex: 1; min-width: 300px; max-width: 450px; height: 650px; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; }
+
+    /* --- TOP BAR --- */
+    .top-bar { display: flex; justify-content: space-between; align-items: flex-start; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .text-blue { color: var(--blue-team); } .text-red { color: var(--red-team); }
+
+    .btn-report { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:bold; display:inline-flex; align-items:center; gap:4px; transition:0.2s; margin-bottom:8px;}
+    .btn-report:hover { background:#fecaca; transform:scale(1.02); }
+
+    /* Rename Input */
+    #rename-box { display:flex; gap:5px; margin-top:8px; }
+    #rename-input { padding:4px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; width:140px; }
+    .btn-rename { padding:4px 10px; background:#64748b; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.8rem; }
+    .btn-rename:hover { background:#475569; }
+
+    /* Timer */
+    .timer-box { text-align: right; }
+    #timer { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 800; color: #1e293b; line-height: 1; }
+    .timer-danger { color: #ef4444 !important; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
+
+    /* --- GAMEPLAY --- */
+    .btn-action { width: 100%; padding: 15px; margin-bottom: 12px; border: none; border-radius: 10px; cursor: pointer; text-align: left; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .btn-action:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+    .btn-action:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-keep { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .btn-cut { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); }
+
+    .act-title { font-size: 1.1rem; font-weight: 800; display: block; margin-bottom: 4px; }
+    .act-desc { font-size: 0.85rem; opacity: 0.95; font-weight: 500; }
+
+    /* Payoff Matrix */
+    .payoff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 20px;}
+    .payoff-cell { background: #f8fafc; border: 2px solid #e2e8f0; padding: 15px 10px; border-radius: 8px; text-align: center; font-size: 0.9rem; color: #64748b; }
+    .money { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1rem; color: #334155; }
+    .payoff-label { font-weight: 700; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px; color: #94a3b8; }
+
+    /* Modify Section */
+    #modify-section { margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 10px; display: none; background: #f8fafc; border-radius: 8px; padding: 10px 15px; text-align: center; }
+    .modify-btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; min-width: 100px; margin: 0 5px; }
+    .modify-keep { background: #10b981; color: white; }
+    .modify-cut { background: #ef4444; color: white; }
+
+    /* --- CHAT --- */
+    .chat-tabs { display: flex; background: #f1f5f9; padding: 5px; gap: 5px; border-bottom: 1px solid #e2e8f0; }
+    .chat-tab { flex: 1; padding: 10px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: #64748b; border-radius: 6px; }
+    .chat-tab.active { background: white; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .chat-window { flex: 1; padding: 15px; overflow-y: auto; background: #ffffff; display: flex; flex-direction: column; gap: 8px; }
+    .message { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; }
+
+    .msg-me { align-self: flex-end; background: #eff6ff; color: #1e3a8a; border: 1px solid #dbeafe; }
+    .msg-them { align-self: flex-start; background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
+    .msg-system { align-self: center; color: #94a3b8; font-size: 0.75rem; font-style: italic; background: #f8fafc; padding: 4px 12px; border-radius: 20px; text-align:center; }
+    .msg-spy { align-self: center; background: #faf5ff; color: #7c3aed; border: 1px solid #d8b4fe; font-style: italic; width: 90%; text-align: center; }
+    .msg-admin { align-self: center; background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; width: 90%; text-align: center; box-shadow:0 2px 4px rgba(0,0,0,0.05); }
+
+    /* --- LOGIN & LOBBY --- */
+    .login-wrapper { max-width: 400px; margin: 80px auto; text-align: center; padding: 0 20px; }
+    .login-card { background: white; padding: 40px 35px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+    .login-card input { box-sizing: border-box; width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; }
+    .login-card button { box-sizing: border-box; width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+    .lobby-wrapper { max-width: 600px; margin: 60px auto; text-align: center; }
+
+    /* --- MODALS & OVERLAYS --- */
+    #broadcast-overlay { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4); z-index: 9999; font-weight: 600; transition: top 0.5s; }
+    #broadcast-overlay.show { top: 30px; }
+
+    /* Game Over Modal */
+    #game-over-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+    .modal-card { background:white; width:90%; max-width:600px; max-height:90vh; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); }
+
+    /* Issue Modal */
+    #issue-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center; backdrop-filter:blur(2px); }
+
+    /* Final Summary Panel (Hidden until end) */
+    #final-summary-panel { display: none; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 20px; margin-bottom: 20px; flex:1; overflow-y: auto; }
+</style>
+
+<div id="broadcast-overlay"></div>
+
+<div id="issue-modal">
+    <div class="modal-card" style="max-width:400px; padding:25px;">
+        <h3 style="margin-top:0; color:#dc2626; display:flex; align-items:center; gap:8px;">⚠️ Report an Issue</h3>
+        <p style="font-size:0.9rem; color:#64748b; margin-bottom:15px;">Are you experiencing a bug, lag, or unfair play? Describe the problem below. The admin will be notified immediately.</p>
+        <textarea id="issue-text" rows="4" placeholder="E.g., I cannot see the chat, the timer froze..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:20px; resize:none; font-family:inherit;"></textarea>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button onclick="closeIssueModal()" style="padding:10px 15px; background:#f1f5f9; color:#475569; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
+            <button onclick="submitIssue()" style="padding:10px 15px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Send Report</button>
+        </div>
+    </div>
+</div>
+
+<div id="login-screen" class="page-section login-wrapper">
+    <h1 style="color:var(--primary); font-weight:900; font-size:2.5rem; margin-bottom:10px;">🥤 Hong Kong Silk Stocking Milk Tea</h1>
+    <p style="color:#64748b; margin-bottom: 30px;">Milk Tea Shop Simulation (Price War)</p>
+    <div class="login-card">
+        <input type="text" id="student_id" placeholder="Student ID" autocomplete="off">
+        <input type="text" id="username" placeholder="Your Name" autocomplete="off">
+        <button onclick="login()">Join Game</button>
+    </div>
+</div>
+
+<div id="lobby-screen" class="page-section lobby-wrapper">
+    <div style="font-size:4rem; margin-bottom:20px; animation:bounce 2s infinite;">⏳</div>
+    <h2>Waiting for Admin...</h2>
+    <p style="color:#64748b;">You are connected. Simulation starts soon.</p>
+
+    <p style="color:#f59e0b; font-size:0.9rem; margin-top:10px;">
+        ⚠️ <b>Note:</b> You can only change your team name before the game starts.
+    </p>
+
+    <div style="margin-top: 30px; text-align: left; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <h3 style="color:var(--primary); border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">📜 Game Rules</h3>
+        <ul style="color: #475569; line-height: 1.8; font-size: 0.95rem; padding-left: 20px;">
+            <li><b>Decision:</b> Each round, choose to <b>KEEP</b> prices high or <b>CUT</b> them.</li>
+            <li><b>Payoffs:</b>
+                <ul>
+                    <li>Both KEEP: Both get <b>HK$10000</b>.</li>
+                    <li>Both CUT: Both get <b>HK$6000</b>.</li>
+                    <li>One CUTs, one KEEPs: Cutter gets <b>HK$15000</b>, Keeper gets <b>HK$3000</b>.</li>
+                </ul>
+            </li>
+            <li><b>Communication:</b> Use the chat to negotiate with your teammate or opponent.</li>
+            <li><b>Goal:</b> Maximize your team's total profit over multiple rounds.</li>
+        </ul>
+    </div>
+</div>
+
+<div id="game-ui" class="page-section">
+    <div class="top-bar">
+        <div>
+            <button onclick="openIssueModal()" class="btn-report">⚠️ Report Issue</button>
+            <h2 id="team-name" style="margin:0;">Team</h2>
+            <div id="teammates-list" style="font-size:0.85rem; color:#64748b;"></div>
+
+            <div id="rename-box">
+                <input id="rename-input" placeholder="New Name...">
+                <button class="btn-rename" onclick="handleRename()">Set Name</button>
+            </div>
+        </div>
+        <div class="timer-box">
+            <div style="font-size:0.7rem; font-weight:800; color:#94a3b8; letter-spacing:1px;">ROUND ENDS</div>
+            <div id="timer">00:00</div>
+        </div>
+    </div>
+
+    <div class="game-layout">
+        <div id="game-container">
+            <h3 id="round-display" style="margin-top:0; border-bottom:1px solid #e2e8f0; padding-bottom:15px; margin-bottom:20px;">Round 1</h3>
+
+            <div id="active-game-panel">
+                <div id="result-overlay" style="display:none; text-align:center; padding:15px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; margin-bottom:15px; color:#166534;">
+                    Round Complete.
+                </div>
+
+                <div id="status-msg" style="display:none; text-align:center; padding:15px; background:#f8fafc; border-radius:8px; margin-bottom:15px; font-style:italic; color:#64748b;"></div>
+
+                <div id="action-buttons">
+                    <button onclick="submitTeamMove('keep')" class="btn-action btn-keep">
+                        <span class="act-title">🛡️ KEEP Prices High</span>
+                        <span class="act-desc">Cooperate (HK$10000 / HK$3000)</span>
+                    </button>
+                    <button onclick="submitTeamMove('cut')" class="btn-action btn-cut">
+                        <span class="act-title">⚔️ CUT Prices</span>
+                        <span class="act-desc">Compete (HK$15000 / HK$6000)</span>
+                    </button>
+
+                    <div id="modify-section">
+                        <div style="font-size:0.8rem; color:#64748b; margin-bottom:5px;">✏️ Modify Choice (Penalty)</div>
+                        <div style="display:flex; justify-content:center;">
+                            <button onclick="modifyMove('keep')" class="modify-btn modify-keep">Change to KEEP</button>
+                            <button onclick="modifyMove('cut')" class="modify-btn modify-cut">Change to CUT</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="final-summary-panel">
+                <h4 style="margin-top:0; color:#0369a1;">📊 Final Results</h4>
+                <p style="font-size:0.9rem; color:#64748b; margin-bottom:15px;">The simulation has ended. You can review the chat history or continue discussing.</p>
+                <button onclick="document.getElementById('game-over-modal').style.display='flex'" style="width:100%; padding:10px; background:#fff; border:1px solid #bae6fd; color:#0284c7; border-radius:6px; cursor:pointer; font-weight:bold;">Re-open Charts</button>
+
+                <table style="width:100%; margin-top:20px; font-size:0.85rem; border-collapse:collapse; text-align:center;">
+                    <thead style="background:#fff;"><tr><th>Rnd</th><th>Me (HK$)</th><th>Opp (HK$)</th></tr></thead>
+                    <tbody id="mini-history-body"></tbody>
+                </table>
+            </div>
+
+            <div class="payoff-grid">
+                <div class="payoff-cell"><div class="payoff-label">Both Keep</div><span id="p-kk-you" class="money">HK$10000</span></div>
+                <div class="payoff-cell"><div class="payoff-label">You Keep/They Cut</div><span id="p-kc-you" class="money">HK$3000</span></div>
+                <div class="payoff-cell"><div class="payoff-label">You Cut/They Keep</div><span id="p-ck-you" class="money">HK$15000</span></div>
+                <div class="payoff-cell"><div class="payoff-label">Both Cut</div><span id="p-cc-you" class="money">HK$6000</span></div>
+            </div>
+        </div>
+
+        <div id="chat-container">
+            <div id="chat-header-status" style="background:#fff7ed; color:#c2410c; padding:8px; font-size:0.8rem; text-align:center; display:none;">⚠️ SPY ACTIVE</div>
+            <div class="chat-tabs">
+                <button id="btn-channel-team" class="chat-tab active" onclick="setChatChannel('team')">🔒 Team</button>
+                <button id="btn-channel-all" class="chat-tab" onclick="setChatChannel('all')">📢 Public</button>
+            </div>
+            <div id="chat-window" class="chat-window"></div>
+            <div style="padding:10px; border-top:1px solid #e2e8f0; display:flex; gap:5px;">
+                <input id="msgInput" type="text" placeholder="Type..." onkeypress="handleEnter(event)" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
+                <button onclick="sendMessage()" style="padding:0 15px; background:#1e293b; color:white; border:none; border-radius:6px; cursor:pointer;">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="game-over-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; width:90%; max-width:700px; max-height:90vh; border-radius:12px; overflow:hidden; display:flex; flex-direction:column;">
+
+        <div style="padding:15px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">🏁 Game Results</h2>
+            <button onclick="document.getElementById('game-over-modal').style.display='none'" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <div style="padding:20px; overflow-y:auto;">
+
+            <div style="height:250px; margin-bottom:20px;">
+                <canvas id="scoreChart"></canvas>
+            </div>
+
+            <table style="width:100%; font-size:0.9rem; text-align:center; border-collapse:collapse;">
+                <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                    <tr>
+                        <th style="padding:10px; width:20%;">Rnd</th>
+                        <th style="padding:10px; width:40%;">Blue (You)</th>
+                        <th style="padding:10px; width:40%;">Red (Opp)</th>
+                    </tr>
+                </thead>
+                <tbody id="game-over-history-body"></tbody>
+            </table>
+        </div>
+
+        <div style="padding:15px; border-top:1px solid #e2e8f0; text-align:center; background:#f8fafc;">
+            <button onclick="closeAndShowChat()" style="padding:10px 25px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Close & Continue Chatting</button>
+        </div>
+    </div>
+</div>
+
+<style> @keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-10px);} } </style>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+<script>
+    const SESSION_CODE = "{{ session_code }}";
+    const URL_AUTO_ID = "{{ auto_id }}";
+    const URL_AUTO_NAME = "{{ auto_name }}";
+</script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+
+<script>
+    // 1. Rename Functionality - Send to server
+    function handleRename() {
+        const newName = document.getElementById('rename-input').value.trim();
+        if(newName) {
+            socket.emit('update_team_name', { name: newName });
+            document.getElementById('rename-input').value = "";
+        }
+    }
+
+    // --- Listen for the server's confirmation and update the UI ---
+    socket.on('team_name_updated', (data) => {
+        // Update the big H2 title
+        const teamTitle = document.getElementById('team-name');
+        if(teamTitle) {
+            teamTitle.innerText = data.name;
+        }
+
+        // Show a quick success popup at the top
+        const broadcast = document.getElementById('broadcast-overlay');
+        if(broadcast) {
+            broadcast.innerText = `Team name updated to: ${data.name}`;
+            broadcast.classList.add('show');
+            setTimeout(() => broadcast.classList.remove('show'), 3000);
+        }
+    });
+
+    // 2. End Game View Logic
+    function closeAndShowChat() {
+        document.getElementById('game-over-modal').style.display = 'none';
+        document.getElementById('active-game-panel').style.display = 'none';
+
+        const summaryPanel = document.getElementById('final-summary-panel');
+        summaryPanel.style.display = 'block';
+
+        const sourceRows = document.getElementById('game-over-history-body').innerHTML;
+        document.getElementById('mini-history-body').innerHTML = sourceRows;
+    }
+
+    // 3. Issue Reporting Logic
+    function openIssueModal() {
+        document.getElementById('issue-modal').style.display = 'flex';
+    }
+
+    function closeIssueModal() {
+        document.getElementById('issue-modal').style.display = 'none';
+        document.getElementById('issue-text').value = '';
+    }
+
+    function submitIssue() {
+        const text = document.getElementById('issue-text').value.trim();
+        if (!text) {
+            alert("Please describe the issue before submitting.");
+            return;
+        }
+
+        // Emit the socket event added to app.py
+        socket.emit('report_issue', { session_code: SESSION_CODE, text: text });
+
+        closeIssueModal();
+
+        // Use the existing broadcast overlay to confirm submission
+        const broadcast = document.getElementById('broadcast-overlay');
+        if(broadcast) {
+            broadcast.innerText = "✅ Issue reported to Admin successfully.";
+            broadcast.classList.add('show');
+            setTimeout(() => broadcast.classList.remove('show'), 4000);
+        }
+    }
+</script>
+
+{% endblock %}

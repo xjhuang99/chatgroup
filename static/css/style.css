@@ -1,0 +1,97 @@
+/* 全局设置 */
+body { font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; background: #f4f4f9; color: #333; margin: 0; padding: 20px; }
+.navbar { background: #333; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+
+/* 聊天窗口容器 */
+#chat-container {
+    width: 350px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    margin: 0 auto; /* 居中 */
+    border: 1px solid #ccc;
+}
+
+.chat-header {
+    background: #343a40;
+    color: white;
+    padding: 15px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+/* 消息滚动区域 */
+#chat-window {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #e9ecef; /* 浅灰色背景 */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* 输入框区域 */
+.chat-input-area {
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    background: white;
+    display: flex;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+#msgInput { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; }
+.btn-send { margin-left: 10px; padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 20px; cursor: pointer; }
+
+/* --- 关键：消息气泡样式 --- */
+.message {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    position: relative;
+    word-wrap: break-word;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+/* 我发的消息：绿色，深色文字 */
+.my-msg {
+    align-self: flex-end;
+    background-color: #dcf8c6 !important; /* 强制绿色 */
+    color: #000 !important; /* 强制黑色文字 */
+    border-bottom-right-radius: 2px;
+}
+
+/* 队友发的消息：白色，深色文字 */
+.their-msg {
+    align-self: flex-start;
+    background-color: #ffffff !important; /* 强制白色 */
+    color: #000 !important; /* 强制黑色文字 */
+    border: 1px solid #ccc;
+    border-bottom-left-radius: 2px;
+}
+
+/* 系统消息 */
+.system-msg {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+    background: #ddd;
+    padding: 5px;
+    border-radius: 10px;
+    align-self: center;
+}
+
+/* 间谍消息样式 */
+.msg-spy {
+    align-self: flex-start;
+    background: #faf5ff !important;
+    color: #7c3aed !important;
+    border: 1px solid #d8b4fe;
+    border-left: 3px solid #9333ea;
+    font-style: italic;
+}

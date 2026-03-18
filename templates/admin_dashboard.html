@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .dashboard-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* Header */
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .header-title h1 { margin: 0; font-size: 2rem; color: #333; }
+    .header-title p { margin: 5px 0 0; color: #666; }
+
+    /* Logout Button */
+    .logout-btn {
+        color: #dc3545;
+        text-decoration: none;
+        font-weight: bold;
+        border: 1px solid #dc3545;
+        padding: 8px 15px;
+        border-radius: 6px;
+        transition: 0.2s;
+    }
+    .logout-btn:hover { background: #dc3545; color: white; }
+
+    /* Create Card */
+    .create-card {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+        margin-bottom: 40px;
+        transition: transform 0.2s;
+    }
+    .create-card:hover { transform: translateY(-2px); }
+    .create-card h2 { margin-top: 0; }
+    .create-card p { opacity: 0.9; margin-bottom: 25px; }
+
+    .btn-create {
+        background: white;
+        color: #2563eb;
+        border: none;
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .btn-create:hover { background: #f8f9fa; transform: scale(1.05); }
+
+    /* Sessions Grid */
+    .sessions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .session-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 20px;
+        transition: 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .session-card:hover { border-color: #2563eb; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+    .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .session-code {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1f2937;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+    }
+
+    .badge-active { background: #dcfce7; color: #16a34a; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
+    .badge-paused { background: #fee2e2; color: #ef4444; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
+
+    .session-meta {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 10px 0 20px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Buttons */
+    .btn-resume {
+        background: #f3f4f6;
+        color: #374151;
+        text-decoration: none;
+        padding: 10px;
+        border-radius: 6px;
+        text-align: center;
+        font-weight: 600;
+        transition: 0.2s;
+        display: block;
+        margin-bottom: 10px;
+    }
+    .btn-resume:hover { background: #e5e7eb; color: #111; }
+
+    .card-actions {
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 15px;
+        margin-top: 5px;
+    }
+
+    .btn-sm {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .btn-pause { background: #f59e0b; color: white; }
+    .btn-pause:hover { background: #d97706; }
+    .btn-play { background: #10b981; color: white; }
+    .btn-play:hover { background: #059669; }
+    .btn-delete { background: #ef4444; color: white; }
+    .btn-delete:hover { background: #dc2626; }
+
+    /* Flash Messages */
+    .flash-msg {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+</style>
+
+<div class="dashboard-container">
+
+    <div class="header-section">
+        <div class="header-title">
+            <h1>Admin Dashboard</h1>
+            <p>Manage your classroom sessions securely.</p>
+        </div>
+        <a href="/logout" class="logout-btn">Log Out</a>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-msg">ℹ️ {{ messages[0] }}</div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="create-card">
+        <h2>🚀 Start a New Class</h2>
+        <p>Generate a unique code for students to join immediately.</p>
+        <form action="/admin/create_session" method="POST">
+            <button type="submit" class="btn-create">+ Create Session</button>
+        </form>
+    </div>
+
+    <h3 style="color:#4b5563; margin-bottom:15px; border-left:4px solid #2563eb; padding-left:10px;">
+        Active Sessions
+    </h3>
+
+    <div class="sessions-grid">
+        {% for s in sessions %}
+        <div class="session-card">
+            <div>
+                <div class="session-header">
+                    <div class="session-code">{{ s.code }}</div>
+                    {% if s.is_paused %}
+                        <span class="badge-paused">⏸ PAUSED</span>
+                    {% else %}
+                        <span class="badge-active">▶ ACTIVE</span>
+                    {% endif %}
+                </div>
+                <div class="session-meta">
+                    <span>👥</span>
+                    <span>{{ s.players }} Players Connected</span>
+                </div>
+            </div>
+
+            <div>
+                <a href="/admin/session/{{ s.code }}" class="btn-resume">
+                    Enter Control Panel &rarr;
+                </a>
+
+                <div class="card-actions">
+                    <form action="/admin/pause_session/{{ s.code }}" method="POST" style="flex: 1; margin: 0;">
+                        <button type="submit" class="btn-sm {% if s.is_paused %}btn-play{% else %}btn-pause{% endif %}" style="width: 100%;">
+                            {% if s.is_paused %}▶ Resume{% else %}⏸ Pause{% endif %}
+                        </button>
+                    </form>
+
+                    <form action="/admin/delete_session/{{ s.code }}" method="POST" style="flex: 1; margin: 0;" onsubmit="return confirm('🚨 WARNING: This will permanently DELETE this session and kick all players! Are you sure?');">
+                        <button type="submit" class="btn-sm btn-delete" style="width: 100%;">
+                            🗑️ Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="grid-column: 1/-1; text-align:center; padding:40px; color:#9ca3af; background:#f9fafb; border-radius:10px; border:2px dashed #e5e7eb;">
+            No active sessions running. Click above to create one!
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}

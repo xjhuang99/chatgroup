@@ -1,422 +1,421 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Configuration</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "base.html" %}
+{% block content %}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-        }
+<style>
+    /* --- THEME VARIABLES --- */
+    :root {
+        --primary: #2563eb; --primary-hover: #1d4ed8;
+        --bg: #f8fafc; --surface: #ffffff;
+        --text: #0f172a; --text-light: #64748b; --border: #e2e8f0;
+        --radius: 10px; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        --success: #4ade80;
+        --warning: #fbbf24;
+        --danger:  #f87171;
+    }
 
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-            text-align: center;
-        }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #eee;
-        }
+    /* --- TOP NAV --- */
+    .top-nav {
+        background: white; border-bottom: 1px solid var(--border);
+        padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; z-index: 50;
+    }
+    .brand { font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+    .session-tag {
+        background: #eff6ff; color: var(--primary); font-family: 'JetBrains Mono', monospace;
+        padding: 4px 10px; border-radius: 6px; font-size: 0.9rem; border: 1px solid #dbeafe;
+    }
+    .nav-link { font-size: 0.9rem; color: var(--text-light); text-decoration: none; font-weight: 500; transition:0.2s; }
+    .nav-link:hover { color: var(--primary); }
 
-        .section:last-child {
-            border-bottom: none;
-        }
+    #invite-link-box { display: none; margin-left: 15px; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .section h2 {
-            color: #555;
-            font-size: 18px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
+    /* --- TABS --- */
+    .tabs { display: flex; gap: 5px; margin: 25px 0; border-bottom: 2px solid var(--border); }
+    .tab-btn {
+        padding: 12px 24px; background: none; border: none; margin-bottom: -2px; border-bottom: 2px solid transparent;
+        font-weight: 600; color: var(--text-light); cursor: pointer; transition: 0.2s;
+        display: flex; align-items: center; gap: 8px; font-size: 0.95rem;
+    }
+    .tab-btn:hover { color: var(--primary); background: #f1f5f9; border-radius: 8px 8px 0 0; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: white; border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: 2px solid white; }
+    .tab-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .step-badge { background: #e2e8f0; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; color: var(--text-light); }
+    .tab-btn.active .step-badge { background: var(--primary); color: white; }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+    /* --- PANELS --- */
+    .panel { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: visible; margin-bottom: 20px; }
+    .panel-head { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid var(--border); font-weight: 700; display: flex; justify-content: space-between; align-items: center; border-radius: var(--radius) var(--radius) 0 0; }
+    .panel-body { padding: 20px; }
 
-        label {
-            display: block;
-            color: #666;
-            font-weight: 500;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
+    /* --- CONTROLS --- */
+    .control-row { display: flex; gap: 15px; align-items: center; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .form-input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; transition: 0.2s; }
+    .form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 
-        input[type="text"],
-        input[type="number"],
-        textarea,
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.3s;
-        }
+    .btn { padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; white-space: nowrap; }
+    .btn-primary { background: var(--primary); color: white; } .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: white; } .btn-success:hover { background: #059669; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-warning { background: var(--warning); color: white; }
+    .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); } .btn-outline:hover { background: #f8fafc; }
 
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        textarea:focus,
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
+    /* --- TABLE --- */
+    .table-container { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; background: white; }
+    .scheduler-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; min-width: 1000px; }
+    .scheduler-table th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; white-space: nowrap; position: relative; z-index: 10; }
+    .scheduler-table td { padding: 8px 5px; border-bottom: 1px solid var(--border); vertical-align: middle; text-align: center; }
 
-        textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
+    /* --- LOBBY & BOARD --- */
+    .lobby-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 250px; overflow-y: auto; padding: 15px; background: #f1f5f9; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; align-content: flex-start; }
+    .player-chip { background: white; border: 1px solid #cbd5e1; color: #334155; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); animation: popIn 0.3s ease; }
+    .match-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; padding-bottom: 10px; }
+    .match-card { background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;}
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .data-table th { background: #f1f5f9; padding: 10px; text-align: left; color: var(--text-light); border-bottom: 1px solid var(--border); }
+    .data-table td { padding: 10px; border-bottom: 1px solid var(--border); }
 
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    /* --- MODALS --- */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; backdrop-filter: blur(2px); }
+    .bot-modal-content { background: white; margin: 10vh auto; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); width: 500px; overflow: hidden; animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .bot-header { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid var(--border); font-weight: 700; display:flex; justify-content:space-between; align-items: center; }
+    .bot-body { padding: 20px; }
+    .bot-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
 
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
+    .inspector-content { background: white; margin: 2vh auto; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); width: 95%; max-width: 1300px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
+    /* Custom Scrollbar */
+    .custom-scroll::-webkit-scrollbar { width: 8px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; border-left: 1px solid #e2e8f0; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 30px;
-        }
+    .view-section { display: none !important; animation: fadeUpdate 0.3s; }
+    .view-section.active { display: block !important; }
+    @keyframes fadeUpdate { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-        }
+    /* Connection Badges */
+    .status-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:50px; font-size:0.75rem; font-weight:bold; }
+    .status-online { background:#dcfce7; color:#16a34a; }
+    .status-offline { background:#fee2e2; color:#ef4444; }
+</style>
 
-        .btn-save {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+<div class="top-nav">
+    <div class="brand">
+        <span>🥤 Milk Tea Director</span>
+        <span class="session-tag">{{ session_code }}</span>
+    </div>
+    <div style="display:flex; align-items:center; gap: 15px;">
+        <div id="invite-link-box">
+            <span style="font-size:0.85rem; color:#64748b;">Student Link:</span>
+            <a href="{{ share_link }}" target="_blank" class="nav-link" style="font-weight:700; color:var(--primary); font-size:1rem;">🔗 {{ share_link }}</a>
+        </div>
 
-        .btn-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
+        <button id="btn-global-pause" onclick="toggleGlobalPause()" class="btn btn-warning" style="font-size:0.8rem; padding: 6px 12px;">⏸ Pause </button>
+        <button onclick="deleteEntireSession()" class="btn btn-danger" style="font-size:0.8rem; padding: 6px 12px;">🚨 Delete</button>
 
-        .btn-reset {
-            background: #f5f5f5;
-            color: #333;
-        }
+        <a href="/admin" class="nav-link" style="color:#ef4444; margin-left:10px;">Exit</a>
+    </div>
+</div>
 
-        .btn-reset:hover {
-            background: #eee;
-        }
+<div class="container">
 
-        .status-message {
-            margin-top: 20px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            display: none;
-            font-size: 14px;
-            animation: slideIn 0.3s ease;
-        }
-
-        .status-message.show {
-            display: block;
-        }
-
-        .status-message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #999;
-            margin-top: 4px;
-        }
-
-        .bot-config {
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .bot-config.disabled {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .default-prompt {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 12px;
-            margin-top: 10px;
-            font-size: 13px;
-            color: #666;
-            display: none;
-        }
-
-        .default-prompt.show {
-            display: block;
-        }
-
-        .default-prompt-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #495057;
-        }
-
-        .default-prompt-content {
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 600px) {
-            .row {
-                grid-template-columns: 1fr;
-            }
-            .container {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>⚙️ Admin Configuration Panel</h1>
-
-        <form id="configForm">
-            <!-- Room Configuration -->
-            <div class="section">
-                <h2>📋 Room Configuration</h2>
-                <div class="row">
-                    <div class="form-group">
-                        <label for="groupSize">Group Size (users per room)</label>
-                        <input type="number" id="groupSize" name="group_size" min="1" max="10" required>
-                        <div class="info-text">Number of users required to form a chat room</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="duration">Chat Duration (minutes)</label>
-                        <input type="number" id="duration" name="duration" min="1" max="180" required>
-                        <div class="info-text">Duration of each chat session</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bot Configuration -->
-            <div class="section">
-                <h2>🤖 Bot Configuration</h2>
-
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="botEnabled" name="bot_enabled">
-                        <label for="botEnabled" style="margin-bottom: 0; font-weight: 400;">Enable Bot in Chat Rooms</label>
-                    </div>
-                    <div class="info-text">If unchecked, no bot will join or respond in rooms</div>
-                </div>
-
-                <!-- Bot Settings Container (隐藏/显示基于botEnabled) -->
-                <div id="botConfigContainer" class="bot-config">
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="botName">Bot Display Name</label>
-                            <input type="text" id="botName" name="bot_name" maxlength="50" required>
-                            <div class="info-text">Name shown in chat (e.g., Assistant, Helper)</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="botDelay">Bot Response Delay (seconds)</label>
-                            <input type="number" id="botDelay" name="bot_delay" min="0" max="60" required>
-                            <div class="info-text">Delay before bot sends a reply</div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="botPrompt">Bot System Prompt</label>
-                        <textarea id="botPrompt" name="bot_prompt" placeholder="You are a friendly and engaging conversational partner..."></textarea>
-                        <div class="info-text">Defines the bot's personality, tone, and behavior. Leave blank for default neutral behavior.</div>
-
-                        <!-- 默认 Prompt 显示区域 -->
-                        <div id="defaultPromptInfo" class="default-prompt">
-                            <div class="default-prompt-title">📝 Default System Prompt (used when left blank):</div>
-                            <div class="default-prompt-content" id="defaultPromptContent"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="button-group">
-                <button type="submit" class="btn-save">💾 Save Configuration</button>
-                <button type="reset" class="btn-reset" onclick="loadConfig()">🔄 Reload Current Config</button>
-            </div>
-
-            <div id="statusMessage" class="status-message"></div>
-        </form>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchView('settings')"><span class="step-badge">1</span> Settings</button>
+        <button id="tab-lobby" class="tab-btn" onclick="switchView('lobby')" disabled><span class="step-badge">2</span> Lobby</button>
+        <button id="tab-status" class="tab-btn" onclick="switchView('status')" disabled><span class="step-badge">3</span> Student Status</button>
+        <button id="tab-home" class="tab-btn" onclick="switchView('home')" disabled><span class="step-badge">4</span> Live Scoreboard</button>
+        <button class="tab-btn" onclick="switchView('results')"><span class="step-badge">5</span> Results</button>
     </div>
 
-    <script>
-        const form = document.getElementById('configForm');
-        const statusMessage = document.getElementById('statusMessage');
-        const botEnabledCheckbox = document.getElementById('botEnabled');
-        const botConfigContainer = document.getElementById('botConfigContainer');
-        const defaultPromptInfo = document.getElementById('defaultPromptInfo');
-        const defaultPromptContent = document.getElementById('defaultPromptContent');
+    <div id="view-settings" class="view-section active">
+        <div class="panel">
+            <div class="panel-head"><span>⚙️ Scenario Editor</span></div>
+            <div class="panel-body">
+                <div class="control-row">
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <label style="font-weight:600; font-size:0.8rem;">Total Rounds</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="number" id="total-rounds" value="5" class="form-input" style="width:50px; text-align:center;" onchange="generateScheduleUI()">
+                            <button onclick="generateScheduleUI()" class="btn btn-outline" style="padding:4px 8px; font-size:0.8rem;">🛠️ Reset</button>
+                        </div>
+                    </div>
+                    <div style="width:1px; height:40px; background:#e2e8f0; margin:0 15px;"></div>
 
-        // 默认系统提示
-        const DEFAULT_SYSTEM_PROMPT = "You are a helpful, neutral conversational partner. Use clear and respectful language, ask clarifying questions when needed, and keep the conversation natural and balanced.";
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <label style="font-size:0.8rem; font-weight:600;">Timeout Default</label>
+                        <select id="timeout-mode" class="form-input">
+                            <option value="keep">Auto Keep</option>
+                            <option value="cut">Auto Cut</option>
+                            <option value="zero">Zero Payoff</option>
+                        </select>
+                    </div>
 
-        // 初始化时显示默认提示
-        defaultPromptContent.textContent = DEFAULT_SYSTEM_PROMPT;
+                    <div style="display:flex; flex-direction:column; gap:5px; margin-left:15px;">
+                        <label style="font-size:0.8rem; font-weight:600;">Time Mode</label>
+                        <select id="sync-mode" class="form-input">
+                            <option value="async">⚡ Async (Fast)</option>
+                            <option value="sync">🐢 Sync (Wait Full Time)</option>
+                            <option value="mixed">⚖️ Mixed (Grace +10s)</option>
+                        </select>
+                    </div>
 
-        // 根据 botEnabled 状态更新 UI
-        function updateBotConfigVisibility() {
-            const isBotEnabled = botEnabledCheckbox.checked;
+                    <div style="display:flex; flex-direction:column; gap:5px; margin-left:15px;">
+                        <label style="font-size:0.8rem; font-weight:600;">Sudden Death (+2)</label>
+                        <select id="sudden-death-mode" class="form-input">
+                            <option value="false">Disable</option>
+                            <option value="true">Enable</option>
+                        </select>
+                    </div>
+                </div>
 
-            if (isBotEnabled) {
-                botConfigContainer.classList.remove('disabled');
-                // 如果 prompt 为空，显示默认提示
-                const botPrompt = document.getElementById('botPrompt');
-                if (!botPrompt.value || botPrompt.value.trim() === '') {
-                    defaultPromptInfo.classList.add('show');
-                } else {
-                    defaultPromptInfo.classList.remove('show');
-                }
-            } else {
-                botConfigContainer.classList.add('disabled');
-                defaultPromptInfo.classList.remove('show');
-            }
-        }
+                <div class="table-container">
+                    <table class="scheduler-table">
+                    <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th style="width:70px;">Time(s)</th>
+                                <th style="width:50px;">Blind</th>
+                                <th style="width:50px;">Silent</th>
+                                <th style="width:130px;">Spy Mode</th>
+                                <th style="width:50px;">Modify</th>
+                                <th style="width:70px;">Penalty</th>
+                                <th style="width:30px; padding-right:40px;">Skew</th>
+                                <th style="min-width:90px;">Admin Message</th>
+                                <th style="width:50px;">Shuffle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedule-body"></tbody>
+                    </table>
+                </div>
 
-        // 监听 botEnabled 复选框变化
-        botEnabledCheckbox.addEventListener('change', updateBotConfigVisibility);
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button id="btn-open-lobby" onclick="openLobby()" class="btn btn-success" style="padding:10px 30px;">✅ Confirm & Open Lobby</button>
+                    <button id="btn-start-game" onclick="startGame()" class="btn btn-primary" style="display:none; padding:10px 30px;">🚀 Start Scenario</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // 监听 prompt 输入变化
-        document.getElementById('botPrompt').addEventListener('input', function() {
-            if (botEnabledCheckbox.checked) {
-                if (!this.value || this.value.trim() === '') {
-                    defaultPromptInfo.classList.add('show');
-                } else {
-                    defaultPromptInfo.classList.remove('show');
-                }
-            }
-        });
+    <div id="view-lobby" class="view-section">
+        <div class="panel" style="max-width:800px; margin:20px auto;">
+            <div class="panel-head" style="justify-content:center;">Lobby Management</div>
+            <div class="panel-body">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:3rem; font-weight:800; color:var(--primary); line-height:1;" id="lobby-count">0</div>
+                    <div style="color:var(--text-light); font-weight:600; text-transform:uppercase; letter-spacing:1px; font-size:0.8rem;">Players Joined</div>
+                </div>
+                <div id="lobby-list" class="lobby-list">
+                    <div style="color:#94a3b8; width:100%; text-align:center; padding:20px;">Waiting for players to join...</div>
+                </div>
+                <div class="control-row" style="justify-content:center; max-width:500px; margin:0 auto 20px;">
+                    <label>Team Format:</label>
+                    <select id="team-size" class="form-input">
+                        <option value="1">1 vs 1</option>
+                        <option value="2">2 vs 2</option>
+                        <option value="3">3 vs 3</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="createTeams()" class="btn btn-primary" style="padding:12px 40px;">Pair Teams & Go to Board</button>
+                    <button onclick="openBotModal()" class="btn btn-outline">🤖 Add Bots...</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // Load current configuration from server
-        async function loadConfig() {
-            try {
-                const res = await fetch('/api/admin/config');
-                if (!res.ok) throw new Error('Failed to fetch config');
-                const config = await res.json();
+    <div id="view-status" class="view-section">
+        <div class="panel">
+            <div class="panel-head">
+                <span>👥 Real-time Student Status</span>
+                <button onclick="switchView('home')" class="btn btn-outline" style="font-size:0.8rem; padding:4px 10px;">Go to Board &rarr;</button>
+            </div>
+            <div class="panel-body" style="padding:0;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Assigned Team</th>
+                            <th>Connection</th>
+                            <th>Game State</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-status-body">
+                        <tr><td colspan="5" style="text-align:center; padding:30px;">No students connected yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-                document.getElementById('groupSize').value = config.group_size;
-                document.getElementById('duration').value = config.duration;
-                document.getElementById('botEnabled').checked = config.bot_enabled;
-                document.getElementById('botName').value = config.bot_name;
-                document.getElementById('botDelay').value = config.bot_delay;
-                document.getElementById('botPrompt').value = config.bot_prompt || '';
+    <div id="view-home" class="view-section">
 
-                // 更新 UI 状态
-                updateBotConfigVisibility();
+        <div class="panel" style="border-color: #fca5a5; margin-bottom: 20px;">
+            <div class="panel-head" style="background: #fef2f2; color: #dc2626; border-bottom-color: #fca5a5;">
+                <span style="display:flex; align-items:center; gap:8px;">⚠️ Active Issue Reports</span>
+            </div>
+            <div class="panel-body" style="padding:0; max-height:200px; overflow-y:auto;" class="custom-scroll">
+                <table class="data-table" style="font-size:0.85rem;">
+                    <thead style="position:sticky; top:0; background:#f1f5f9;">
+                        <tr>
+                            <th style="width:120px;">Time (HKT)</th>
+                            <th style="width:150px;">Player</th>
+                            <th>Issue Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="issue-reports-body">
+                        <tr><td colspan="3" style="text-align:center; padding:20px; color:#64748b;">No issues reported.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                console.log('✅ Config loaded:', config);
-            } catch (err) {
-                showStatus('⚠️ Could not load config: ' + err.message, 'error');
-                console.error(err);
-            }
-        }
+        <div class="panel">
+            <div class="panel-head">
+                <span>📡 Live Matches</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span id="active-match-count" style="font-size:0.85rem; background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:10px;">0 Active</span>
+                    <button onclick="startGame()" class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem;">▶ Start Scenario</button>
+                </div>
+            </div>
+            <div class="panel-body" style="background:#f8fafc; padding:20px 0;">
+                <div id="matches-container" class="match-strip" style="padding:0 24px;">
+                    <div style="text-align:center; width:100%; color:var(--text-light); padding:40px;">Waiting for matches...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // Handle form submission
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    <div id="view-results" class="view-section">
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:20px;">
+            <div class="panel" style="margin:0; text-align:center; padding:15px;">
+                <div id="stat-profit" style="font-size:1.5rem; font-weight:800;">HK$0</div>
+                <div style="font-size:0.8rem; color:var(--text-light);">Avg Profit</div>
+            </div>
+            <div class="panel" style="margin:0; text-align:center; padding:15px;">
+                <div id="stat-coop" style="font-size:1.5rem; font-weight:800;">0%</div>
+                <div style="font-size:0.8rem; color:var(--text-light);">Coop Rate</div>
+            </div>
+            <div class="panel" style="margin:0; text-align:center; padding:15px;">
+                <div id="stat-time" style="font-size:1.5rem; font-weight:800;">0ms</div>
+                <div style="font-size:0.8rem; color:var(--text-light);">Avg Reaction</div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-head">
+                <span>🏆 Final Rankings</span>
+                <div>
+                    <a href="{{ url_for('export_logs', session_code=session_code) }}" target="_blank" class="btn btn-outline" style="font-size:0.8rem; margin-right:5px;">📋 Audit Log</a>
+                    <a href="{{ url_for('export_csv', session_code=session_code) }}" target="_blank" class="btn btn-outline" style="font-size:0.8rem;">📥 CSV</a>
+                </div>
+            </div>
+            <div class="panel-body" style="padding:0;">
+                <table class="data-table">
+                    <thead><tr><th>Rank</th><th>Player</th><th>Team</th><th style="text-align:right">Profit</th><th style="text-align:right">Coop%</th><th style="text-align:right">Msgs</th></tr></thead>
+                    <tbody id="leaderboard-body"><tr><td colspan="7" style="text-align:center; padding:30px;">No data yet.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-            const formData = new FormData(form);
+</div>
 
-            // Important: Only include bot_enabled if checkbox is checked
-            // FastAPI treats missing field as False when default is provided
-            if (!botEnabledCheckbox.checked) {
-                formData.delete('bot_enabled');
-                // 当 bot 禁用时，不需要发送 bot 相关配置
-                formData.delete('bot_name');
-                formData.delete('bot_delay');
-                formData.delete('bot_prompt');
-            }
+<div id="bot-modal" class="modal-overlay">
+    <div class="bot-modal-content">
+        <div class="bot-header">
+            <span>🤖 Add AI Bots</span>
+            <span onclick="closeBotModal()" style="cursor:pointer; font-size:1.5rem; color:#64748b;">&times;</span>
+        </div>
+        <div class="bot-body">
+            <div class="bot-row">
+                <div><div style="font-weight:600;">Tit-for-Tat</div><div style="font-size:0.75rem; color:#64748b;">Copies opponent's last move.</div></div>
+                <input type="number" id="bot-tft" value="0" min="0" class="form-input" style="width:60px; text-align:center;">
+            </div>
+            <div class="bot-row">
+                <div><div style="font-weight:600;">Grim Trigger</div><div style="font-size:0.75rem; color:#64748b;">Defects forever if betrayed.</div></div>
+                <input type="number" id="bot-grim" value="0" min="0" class="form-input" style="width:60px; text-align:center;">
+            </div>
+            <div class="bot-row">
+                <div><div style="font-weight:600;">Random</div><div style="font-size:0.75rem; color:#64748b;">Unpredictable moves.</div></div>
+                <input type="number" id="bot-rnd" value="0" min="0" class="form-input" style="width:60px; text-align:center;">
+            </div>
+            <div style="border-top:1px solid #eee; margin-top:15px; padding-top:15px;">
+                <div style="font-weight:600; margin-bottom:5px;">Custom LLM Bot</div>
+                <textarea id="bot-custom-prompt" class="form-input" style="width:100%; height:60px; margin-bottom:8px;" placeholder="Prompt (e.g. 'You are greedy and aggressive...')"></textarea>
+                <div class="bot-row">
+                    <span style="font-size:0.85rem;">Quantity:</span>
+                    <input type="number" id="bot-custom-qty" value="0" min="0" class="form-input" style="width:60px; text-align:center;">
+                </div>
+            </div>
+            <button onclick="submitBots()" class="btn btn-primary" style="width:100%; margin-top:10px;">Generate Bots</button>
+        </div>
+    </div>
+</div>
 
-            try {
-                const response = await fetch('/api/admin/config', {
-                    method: 'POST',
-                    body: formData
-                });
+<div id="details-modal" class="modal-overlay">
+    <div class="inspector-content">
+        <div style="padding:15px 25px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; flex-shrink:0;">
+            <h3 style="margin:0; font-size:1.1rem; color:#334155;">🔍 Match Inspector</h3>
+            <button onclick="closeModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:#64748b;">&times;</button>
+        </div>
 
-                if (response.ok) {
-                    await loadConfig(); // Refresh displayed values
-                    showStatus('✅ Configuration saved successfully!', 'success');
-                } else {
-                    const errorText = await response.text();
-                    showStatus('❌ Save failed: ' + errorText, 'error');
-                }
-            } catch (error) {
-                showStatus('❌ Network error: ' + error.message, 'error');
-                console.error(error);
-            }
-        });
+        <div style="display:grid; grid-template-columns: 400px 1fr; flex:1; min-height:0; overflow:hidden;">
 
-        // Show temporary status message
-        function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = `status-message show ${type}`;
-            setTimeout(() => {
-                statusMessage.classList.remove('show');
-            }, 5000);
-        }
+            <div class="custom-scroll" style="padding:20px; background:#f1f5f9; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; gap:20px; overflow-y:scroll; min-height:0;">
+                <div style="background:white; padding:15px; border-radius:8px; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.05); flex-shrink:0;">
+                    <h4 style="margin:0; margin-bottom:10px; color:#475569; font-size:0.85rem; text-transform:uppercase; border-bottom:1px solid #f1f5f9; padding-bottom:5px;">Performance Data</h4>
+                    <div id="inspector-stats" style="font-size:0.9rem; line-height:1.6; color:#334155;">Loading data...</div>
+                </div>
 
-        // 初始加载配置并更新 UI
-        loadConfig();
-    </script>
-</body>
-</html>
+                <div style="background:#eff6ff; padding:15px; border-radius:8px; border:1px solid #bfdbfe; flex:1; display:flex; flex-direction:column; min-height:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink:0;">
+                        <h4 style="margin:0; color:#1e40af; font-size:0.95rem;">🤖 AI Strategy Analyst</h4>
+                        <button onclick="analyzeMatchAI()" class="btn btn-primary" style="font-size:0.8rem; padding:6px 12px; background:#2563eb;">✨ Analyze</button>
+                    </div>
+                    <div id="ai-loading" style="display:none; color:#64748b; font-size:0.85rem; font-style:italic; margin-bottom:10px; flex-shrink:0;">Analyzing match history and chat patterns...</div>
+                    <div id="ai-result" class="custom-scroll" style="font-size:0.9rem; color:#334155; white-space:pre-wrap; overflow-y:scroll; flex:1; background:rgba(255,255,255,0.6); padding:10px; border-radius:6px; border:1px solid #dbeafe; min-height:0;">Click 'Analyze' to generate insights.</div>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; background:white; height:100%; overflow:hidden; min-height:0;">
+                <div class="custom-scroll" style="height:200px; flex-shrink:0; overflow-y:scroll; border-bottom:1px solid #e2e8f0;">
+                    <table class="data-table" style="font-size:0.85rem;">
+                        <thead style="position:sticky; top:0; z-index:10; background:#f1f5f9;">
+                            <tr><th style="text-align:center;">Rnd</th><th style="text-align:center;">Blue Move</th><th style="text-align:center;">Red Move</th></tr>
+                        </thead>
+                        <tbody id="modal-history"></tbody>
+                    </table>
+                </div>
+
+                <div style="padding:10px; background:#f8fafc; font-weight:600; color:#64748b; font-size:0.8rem; border-bottom:1px solid #e2e8f0; text-transform:uppercase; flex-shrink:0;">💬 Live Chat History</div>
+
+                <div id="modal-chat" class="custom-scroll" style="flex:1; overflow-y:scroll; padding:20px; display:flex; flex-direction:column; gap:10px; min-height:0;"></div>
+
+                <div style="padding:15px; border-top:1px solid #e2e8f0; display:flex; flex-direction:column; gap:10px; background:white; flex-shrink:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#f0fdf4; padding:10px; border-radius:6px; border:1px solid #bbf7d0;">
+                        <span style="font-size:0.85rem; color:#166534;">🎓 <b>Summary Phase:</b> Trigger AI Coach to analyze this match.</span>
+                        <button onclick="toggleCoach()" class="btn btn-success" style="font-size:0.8rem;">✨ Start Reflection</button>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <input id="admin-chat-input" type="text" class="form-input" placeholder="Broadcast message to this match..." onkeypress="if(event.key==='Enter') sendAdminChat()" style="flex:1;">
+                        <button onclick="sendAdminChat()" class="btn btn-outline" style="background:#f1f5f9;">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+<script> const SESSION_CODE = "{{ session_code }}"; </script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+{% endblock %}
