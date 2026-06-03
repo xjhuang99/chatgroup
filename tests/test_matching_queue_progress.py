@@ -33,7 +33,23 @@ class TestMatchingQueueProgress(unittest.TestCase):
         self.assertEqual(prog["humans_matched"], 1)
         self.assertEqual(prog["min_humans_per_group"], 2)
         self.assertEqual(prog["ai_teammates_ready"], 2)
-        self.assertEqual(prog["teammate_display_names"], ["Participant 1", "Participant 2"])
+        self.assertEqual(prog["participants_matched"], 3)
+        self.assertEqual(prog["participants_needed"], 4)
+        self.assertEqual(prog["teammate_display_names"], ["c", "d"])
+
+    def test_two_humans_one_ai_shows_two_of_three(self):
+        cfg = SessionConfig("SES-2H1AI", "2H+1AI", 2)
+        cfg.min_humans_per_group = 2
+        cfg.max_humans_per_group = 2
+        cfg.bot_enabled = True
+        cfg.bots = [{"name": "a"}]
+        self.mm.sessions["SES-2H1AI"] = cfg
+        self.mm.forming_fifo["SES-2H1AI"] = []
+        self.mm.forming_stratified["SES-2H1AI"] = {}
+        self.mm.add_to_queue("SES-2H1AI", "human_1")
+        prog = self.mm.get_queue_progress("SES-2H1AI", "human_1")
+        self.assertEqual(prog["participants_matched"], 2)
+        self.assertEqual(prog["participants_needed"], 3)
 
     def test_second_human_opens_room_humans_only(self):
         self.mm.add_to_queue(self.sid, "human_1")
@@ -64,6 +80,8 @@ class TestMatchingQueueProgress(unittest.TestCase):
         self.assertEqual(data["humans_matched"], 1)
         self.assertEqual(data["min_humans_per_group"], 2)
         self.assertEqual(data["ai_teammates_ready"], 2)
+        self.assertEqual(data["participants_matched"], 3)
+        self.assertEqual(data["participants_needed"], 4)
         match_manager.remove_from_queue(self.sid, uid)
 
     def test_min_one_human_does_not_wait(self):

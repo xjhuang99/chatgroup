@@ -766,12 +766,17 @@ class MatchManager:
         if not session or slot is None:
             return None
         min_h, max_h = resolve_human_group_bounds(session)
+        humans_matched = len(slot)
         ai_count = len(session.bots) if getattr(session, "bot_enabled", True) and session.bots else 0
+        participants_needed = min_h + ai_count
+        participants_matched = humans_matched + ai_count
         return {
-            "humans_matched": len(slot),
+            "humans_matched": humans_matched,
             "min_humans_per_group": min_h,
             "max_humans_per_group": max_h,
             "ai_teammates_ready": ai_count,
+            "participants_matched": participants_matched,
+            "participants_needed": participants_needed,
             "teammate_display_names": self.expected_human_display_names(session),
         }
 
