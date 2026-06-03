@@ -220,11 +220,11 @@
     </div>
     <section class="hero">
         <div class="hero-photo">
-            <img src="/static/images/monica-huang.png" alt="黄馨洁 Xinjie (Monica) Huang" width="148" height="148">
+            <img id="heroPhoto" src="/static/images/monica-huang.png" alt="黄馨洁 Xinjie (Monica) Huang" width="148" height="148">
         </div>
         <div class="hero-text">
             <h1 data-i18n="hero.name">Xinjie (Monica) Huang</h1>
-            <p class="name-alt">黄馨洁</p>
+            <p class="name-alt" data-i18n="hero.nameAlt">黄馨洁</p>
             <p class="lab-line" data-i18n="hero.lab">From ACTR Lab · HKUST</p>
             <div class="contact">
                 <a href="mailto:xinjiehuang@ust.hk">xinjiehuang@ust.hk</a>
@@ -393,6 +393,8 @@ const HOME_I18N = {
     en: {
         'nav.home': 'Home', 'nav.dashboard': 'Dashboard', 'nav.admin': 'Admin', 'nav.manual': 'Manual', 'nav.login': 'Login',
         'hero.name': 'Xinjie (Monica) Huang',
+        'hero.nameAlt': '黄馨洁',
+        'hero.photoAlt': 'Xinjie (Monica) Huang · 黄馨洁',
         'hero.lab': 'From ACTR Lab · HKUST',
         'hero.location': 'Hong Kong',
         'apps.title': 'Platforms I Built',
@@ -447,7 +449,9 @@ const HOME_I18N = {
     },
     'zh-Hans': {
         'nav.home': '主页', 'nav.dashboard': '控制台', 'nav.admin': '管理', 'nav.manual': '手册', 'nav.login': '登录',
-        'hero.name': 'Xinjie (Monica) Huang',
+        'hero.name': '黄馨洁',
+        'hero.nameAlt': 'Xinjie (Monica) Huang',
+        'hero.photoAlt': '黄馨洁 · Xinjie (Monica) Huang',
         'hero.lab': 'ACTR Lab · 香港科技大学',
         'hero.location': '香港',
         'apps.title': '我开发的平台',
@@ -502,7 +506,9 @@ const HOME_I18N = {
     },
     'zh-Hant': {
         'nav.home': '主頁', 'nav.dashboard': '控制台', 'nav.admin': '管理', 'nav.manual': '手冊', 'nav.login': '登入',
-        'hero.name': 'Xinjie (Monica) Huang',
+        'hero.name': '黃馨潔',
+        'hero.nameAlt': 'Xinjie (Monica) Huang',
+        'hero.photoAlt': '黃馨潔 · Xinjie (Monica) Huang',
         'hero.lab': 'ACTR Lab · 香港科技大學',
         'hero.location': '香港',
         'apps.title': '我開發的平台',
@@ -518,11 +524,11 @@ const HOME_I18N = {
         'sec.education': '教育背景', 'sec.presentations': '會議報告', 'sec.skills': '技能與語言', 'sec.honors': '榮譽與證書',
         'exp.hkust.org': '香港科技大學', 'exp.hkust.date': '2025年4月 — 至今',
         'exp.hkust.role': '香港 · 研究助理',
-        'exp.hkust.b1': '文獻綜述、Stata/R 定量分析、質性方法與量表開發等研究支持。',
+        'exp.hkust.b1': '文獻綜述、Stata/R 定量分析、質性方法與量表開發等研究支援。',
         'exp.hkust.b2': '協助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 與 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 資助申請。',
         'exp.hkust.b3': '開展機構（高校等）AI 應用的質性與定量研究。',
         'exp.hkust.b4': '參與港科大圖書館 GenAI 文獻工具項目。',
-        'exp.hkust.b5': '搭建並維護 ACTR Lab 平台（Chatbot、群組聊天、囚徒困境遊戲）。',
+        'exp.hkust.b5': '建置並維護 ACTR Lab 平台（Chatbot、群組聊天、囚徒困境遊戲）。',
         'exp.cmcc.org': '中國移動國際有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
         'exp.cmcc.role': '香港與深圳 · 技術顧問',
         'exp.cmcc.b1': '數位轉型：AI、雲與 ERP。',
@@ -536,13 +542,13 @@ const HOME_I18N = {
         'res.status.b2': '調查實驗：能力中介與規範同化調節。',
         'res.mapper.title': 'AI 增強群組動態圖譜', 'res.mapper.label': '進行中項目',
         'res.mapper.b1': '基於 Transformer 的多方對話分析與三維「對話地形」視覺化。',
-        'res.esic.title': 'ESIC 量表（人際連結的情感支持）', 'res.esic.label': '進行中項目',
+        'res.esic.title': 'ESIC 量表（人際連結的情感支援）', 'res.esic.label': '進行中項目',
         'res.esic.b1': '雙因子量表（線上舒適與 AI 陪伴）；EFA/CFA（N > 1,300）。',
         'edu.hkust.org': '香港科技大學', 'edu.hkust.date': '2025年 — 至今',
         'edu.hkust.degree': '旁聽 · 組織行為學（OB）、行為科學與談判',
         'edu.ic.org': '帝國理工學院', 'edu.ic.date': '2020年10月 — 2021年10月',
-        'edu.ic.degree': '倫敦 · 通信與信號處理碩士（Merit）',
-        'edu.ic.b1': '論文：都卜勒雷達信號處理（MATLAB + Microwave Studio）。',
+        'edu.ic.degree': '倫敦 · 通訊與訊號處理碩士（Merit）',
+        'edu.ic.b1': '論文：都卜勒雷達訊號處理（MATLAB + Microwave Studio）。',
         'edu.leeds.org': '利茲大學', 'edu.leeds.date': '2016年9月 — 2020年7月',
         'edu.leeds.degree': '電子電氣工程學士（一等）；西南交通大學雙學位',
         'edu.leeds.b1': '研究：機器翻譯演進（規則系統至 Transformer）。',
@@ -563,6 +569,8 @@ function applyHomeLang(lang) {
         const key = el.getAttribute('data-i18n');
         if (pack[key] != null) el.textContent = pack[key];
     });
+    const photo = document.getElementById('heroPhoto');
+    if (photo && pack['hero.photoAlt']) photo.alt = pack['hero.photoAlt'];
     document.querySelectorAll('[data-i18n-html]').forEach(el => {
         const key = el.getAttribute('data-i18n-html');
         if (pack[key] != null) el.innerHTML = pack[key];
