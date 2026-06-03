@@ -424,13 +424,11 @@
 <header class="nav-header">
     <a href="/" class="nav-logo">ACTR</a>
     <nav class="nav-links">
-        <a href="https://xjhuang.com/home">Home</a>
         <a href="/" class="active">Dashboard</a>
         <a href="/admin">Admin</a>
         <a href="/admin/accounts" id="navResearchers" style="display:none;">Researchers</a>
         <a href="/account" id="navAccount" style="display:none;">Account</a>
         <a href="/manual">Manual</a>
-        <a href="/login">Login</a>
     </nav>
 </header>
 
@@ -911,7 +909,7 @@ async function confirmModifySession() {
         });
         if (res.status === 401) {
             toast('Please sign in again');
-            window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname);
+            window.location.href = location.pathname + location.search;
             return;
         }
         const data = await res.json().catch(() => ({}));

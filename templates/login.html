@@ -131,8 +131,13 @@
                 });
                 if (res.ok) {
                     sessionStorage.setItem('actr_admin', '1');
-                    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
-                    window.location.href = redirect;
+                    const params = new URLSearchParams(window.location.search);
+                    const fromQuery = params.get('redirect');
+                    const fromPath = window.location.pathname !== '/login'
+                        ? window.location.pathname + window.location.search
+                        : '/';
+                    const redirect = fromQuery || fromPath;
+                    window.location.href = redirect.startsWith('/') ? redirect : '/';
                     return;
                 }
                 const data = await res.json().catch(() => ({}));

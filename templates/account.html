@@ -28,7 +28,6 @@
         <a href="/admin">Admin</a>
         <a href="/account" class="active">Account</a>
         <a href="/manual">Manual</a>
-        <a href="/login">Login</a>
     </nav>
 </header>
 <div class="wrap">
@@ -58,7 +57,7 @@ async function loadMe() {
     const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
     const d = await r.json();
     if (!d.authenticated) {
-        location.href = '/login?redirect=/account';
+        location.href = '/account';
         return;
     }
     if (d.type === 'admin') {
