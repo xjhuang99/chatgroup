@@ -7,6 +7,7 @@ from cache_manager import cache_manager
 from db.database import delete_room_data, get_room_history
 from error_handler import error_handler
 from group_lifecycle import shutdown_group_chat
+from chat_log import log_room_pause_state
 from match_manager import match_manager
 from usage_tracker import (
     get_group_spend_usd,
@@ -108,6 +109,7 @@ async def admin_pause_room(room_id: str, request: Request):
             if room_id in groups:
                 _require_group_room_access(request, room_id)
                 groups[room_id]["paused"] = True
+                log_room_pause_state(session_id, room_id, paused=True)
                 return {"status": "success", "message": f"Room {room_id} paused", "paused": True}
         return {"status": "error", "message": "Room not found"}
     except Exception as e:
@@ -122,6 +124,7 @@ async def admin_unpause_room(room_id: str, request: Request):
             if room_id in groups:
                 _require_group_room_access(request, room_id)
                 groups[room_id]["paused"] = False
+                log_room_pause_state(session_id, room_id, paused=False)
                 return {"status": "success", "message": f"Room {room_id} resumed", "paused": False}
         return {"status": "error", "message": "Room not found"}
     except Exception as e:

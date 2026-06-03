@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from activity_logger import activity_logger
 from admin_auth import require_admin
+from chat_log import load_chat_log_events
 from context_manager import resolve_context_max_chars
 from db.database import get_room_history
 from match_manager import match_manager
@@ -91,6 +92,71 @@ async def export_session_activity(session_id: str):
         output,
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=activity_{session_id}.csv"},
+    )
+
+
+@router.get("/api/export/room/{room_id}/research_log", dependencies=[Depends(require_admin)])
+async def export_room_research_log(room_id: str):
+    """CSV of JSONL research events (full system prompts, mode-2 router, mode-4 gate, etc.)."""
+    events = load_chat_log_events(room_id)
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "timestamp",
+            "event_type",
+            "actor",
+            "request_id",
+            "turn_id",
+            "call_type",
+            "model",
+            "prompt_tokens",
+            "completion_tokens",
+            "cost_usd",
+            "latency_ms",
+            "session_mode",
+            "bots_eligible",
+            "bots_queued",
+            "system_prompt_full",
+            "user_message",
+            "reply",
+            "details_json",
+        ]
+    )
+    for ev in events:
+        details = ev.get("details") or {}
+        writer.writerow(
+            [
+                ev.get("timestamp", ""),
+                ev.get("event_type", ""),
+                ev.get("actor", ""),
+                details.get("request_id", ""),
+                details.get("turn_id", ""),
+                details.get("call_type", ""),
+                details.get("model", ""),
+                details.get("prompt_tokens", ""),
+                details.get("completion_tokens", ""),
+                details.get("cost_usd", ""),
+                details.get("latency_ms", ""),
+                details.get("session_mode", ""),
+                json.dumps(details.get("bots_eligible"), ensure_ascii=False)
+                if isinstance(details.get("bots_eligible"), list)
+                else details.get("bots_eligible", ""),
+                json.dumps(details.get("bots_queued"), ensure_ascii=False)
+                if isinstance(details.get("bots_queued"), list)
+                else details.get("bots_queued", ""),
+                details.get("system_prompt_full", ""),
+                details.get("user_message", ""),
+                details.get("reply", ""),
+                json.dumps(details, ensure_ascii=False),
+            ]
+        )
+    output = BytesIO(buf.getvalue().encode("utf-8"))
+    output.seek(0)
+    return StreamingResponse(
+        output,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=research_log_{room_id}.csv"},
     )
 
 

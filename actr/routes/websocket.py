@@ -12,6 +12,8 @@ from group_lifecycle import shutdown_group_chat
 from error_handler import error_handler
 from group_idle import cancel_group_idle_timer
 from match_manager import match_manager
+from bot_interaction import all_peer_names, parse_at_mentions
+from chat_log import log_participant_join
 from session_runtime import (
     advance_turn,
     broadcast_turn,
@@ -64,6 +66,13 @@ async def websocket_chat(websocket: WebSocket, session_id: str, group_id: str, u
     group_info["connections"].append({"websocket": websocket, "uid": uid})
     touch_group_activity(session_id, group_id)
     display_name = group_info["member_names"][uid]
+    log_participant_join(
+        session_id,
+        group_id,
+        uid=uid,
+        display_name=display_name,
+        member_names=dict(group_info.get("member_names", {})),
+    )
 
     init_turn_state(session, group_info)
     if session.turn_mode == "timed" and group_info.get("turn_initialized"):
@@ -125,7 +134,15 @@ async def websocket_chat(websocket: WebSocket, session_id: str, group_id: str, u
                 for e in group_info.get("connections", [])
                 if e.get("websocket") is not websocket
             ]
-            msg_payload = json.dumps({"type": "message", "sender": display_name, "text": data})
+            mention_names = parse_at_mentions(
+                data, all_peer_names(session, group_info)
+            )
+            msg_payload = json.dumps({
+                "type": "message",
+                "sender": display_name,
+                "text": data,
+                "mentions": mention_names,
+            })
             await asyncio.gather(
                 *[c.send_text(msg_payload) for c in other_conns],
                 return_exceptions=True,

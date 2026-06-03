@@ -112,11 +112,16 @@ async def create_chat_completion(
     session_id: Optional[str] = None,
     group_id: Optional[str] = None,
     call_type: str = "chat",
+    request_id: Optional[str] = None,
+    turn_id: Optional[str] = None,
 ) -> str:
     """OpenAI chat completion with model-specific token param names and usage tracking."""
+    import time
+
     from usage_tracker import (
         SpendCapExceeded,
         check_can_spend,
+        estimate_cost_usd,
         record_usage,
         usage_from_completion,
     )
@@ -124,6 +129,17 @@ async def create_chat_completion(
     if group_id and session_id:
         allowed, reason = check_can_spend(session_id, group_id)
         if not allowed:
+            if request_id:
+                from chat_log import log_llm_error
+
+                log_llm_error(
+                    session_id,
+                    group_id,
+                    request_id=request_id,
+                    error_type="spend_cap",
+                    message=reason or "spend cap",
+                    extra={"call_type": call_type, "turn_id": turn_id},
+                )
             raise SpendCapExceeded(reason)
 
     kwargs: Dict = {
@@ -138,11 +154,28 @@ async def create_chat_completion(
         if not model.startswith("deepseek"):
             kwargs["frequency_penalty"] = 0.35
             kwargs["presence_penalty"] = 0.2
-    response = await get_llm_client_for_model(model).chat.completions.create(**kwargs)
-    text = response.choices[0].message.content.strip()
+    t0 = time.perf_counter()
+    try:
+        response = await get_llm_client_for_model(model).chat.completions.create(**kwargs)
+        text = response.choices[0].message.content.strip()
+    except Exception as e:
+        if request_id and session_id and group_id:
+            from chat_log import log_llm_error
 
+            log_llm_error(
+                session_id,
+                group_id,
+                request_id=request_id,
+                error_type="api_error",
+                message=str(e),
+                extra={"call_type": call_type, "model": model, "turn_id": turn_id},
+            )
+        raise
+
+    latency_ms = (time.perf_counter() - t0) * 1000.0
     if group_id and session_id:
         prompt_t, completion_t = usage_from_completion(response, messages)
+        cost = estimate_cost_usd(model, prompt_t, completion_t)
         record_usage(
             session_id=session_id,
             group_id=group_id,
@@ -151,6 +184,21 @@ async def create_chat_completion(
             completion_tokens=completion_t,
             call_type=call_type,
         )
+        if request_id:
+            from chat_log import log_api_usage
+
+            log_api_usage(
+                session_id,
+                group_id,
+                request_id,
+                model=model,
+                call_type=call_type,
+                prompt_tokens=prompt_t,
+                completion_tokens=completion_t,
+                cost_usd=cost,
+                latency_ms=latency_ms,
+                extra={"turn_id": turn_id} if turn_id else None,
+            )
     return text
 
 # Short fallbacks when the AI API is unavailable
@@ -327,6 +375,7 @@ class ChatBot:
         emoji_enabled: bool = False,
         model: Optional[str] = None,
         session_id: Optional[str] = None,
+        log_meta: Optional[Dict] = None,
     ) -> Optional[str]:
         """
         Generates a response using the full room history provided by the ContextManager.
@@ -370,6 +419,24 @@ class ChatBot:
             messages.insert(2, {"role": "system", "content": emoji_style_note(emoji_enabled)})
 
             chat_model = normalize_gpt_chat_model(model)
+            request_id = None
+            if session_id and self.room_id:
+                from chat_log import log_llm_call
+
+                meta = dict(log_meta or {})
+                meta.setdefault("call_type", "bot_reply")
+                meta.setdefault("model", chat_model)
+                request_id = log_llm_call(
+                    session_id,
+                    self.room_id,
+                    "llm_request",
+                    actor=self.name,
+                    messages=messages,
+                    extra=meta,
+                )
+                if log_meta is not None:
+                    log_meta["request_id"] = request_id
+            turn_id = (log_meta or {}).get("turn_id") if log_meta else None
             raw = await create_chat_completion(
                 model=chat_model,
                 messages=messages,
@@ -378,8 +445,11 @@ class ChatBot:
                 session_id=session_id,
                 group_id=self.room_id,
                 call_type="bot_reply",
+                request_id=request_id,
+                turn_id=turn_id,
             )
-            # Length target is prompt-only; max_words is a loose safety ceiling if the model runs long.
+            if log_meta is not None:
+                log_meta["raw_model_output"] = raw
             reply = sanitize_bot_reply(
                 raw, self.name, peer_names, max_words=max_words, allow_emoji=emoji_enabled
             )
@@ -390,6 +460,20 @@ class ChatBot:
             if isinstance(e, SpendCapExceeded):
                 print(f"🛑 Bot {self.name} skipped: {e}")
                 return None
+            rid = (log_meta or {}).get("request_id") if log_meta else None
+            if rid and session_id and self.room_id:
+                from chat_log import log_llm_error
+
+                log_llm_error(
+                    session_id,
+                    self.room_id,
+                    request_id=rid,
+                    actor=self.name,
+                    error_type="generation_failed",
+                    message=str(e),
+                )
+            if log_meta is not None:
+                log_meta["fallback_used"] = True
             print(f"❌ Generation Error: {e} — using fallback reply")
             return random.choice(FALLBACK_REPLIES)
     def update_persona(self, new_prompt: str):
@@ -444,22 +528,54 @@ async def analyze_intent(
     """
 
     try:
+        aux_model = resolve_aux_model()
+        router_messages = [{"role": "system", "content": orchestrator_prompt}]
+        request_id = None
+        if session_id and group_id:
+            from chat_log import log_llm_call
+
+            request_id = log_llm_call(
+                session_id,
+                group_id,
+                "intent_router_request",
+                actor="orchestrator",
+                messages=router_messages,
+                extra={
+                    "call_type": "intent_router",
+                    "model": aux_model,
+                    "session_mode": 2,
+                    "user_text": (user_text or "")[:800],
+                    "history_chars": len(history_text or ""),
+                },
+            )
         decision = (
             await create_chat_completion(
-                model=resolve_aux_model(),
-                messages=[{"role": "system", "content": orchestrator_prompt}],
+                model=aux_model,
+                messages=router_messages,
                 cap_tokens=10,
                 temperature=0,
                 session_id=session_id,
                 group_id=group_id,
                 call_type="intent_router",
+                request_id=request_id,
             )
         ).replace("@", "")
-        # Robust name matching
+        chosen = None
         for bot in bots_config:
             if bot['name'].lower() in decision.lower():
-                return bot['name']
-        return None
+                chosen = bot['name']
+                break
+        if session_id and group_id:
+            from chat_log import append_chat_log_event
+
+            append_chat_log_event(
+                session_id,
+                group_id,
+                "intent_router_result",
+                {"raw_decision": decision[:200], "chosen_bot": chosen},
+                actor="orchestrator",
+            )
+        return chosen
     except:
         return None
 
@@ -510,14 +626,34 @@ Guidelines:
 Output ONLY one number from 0 to 1 (examples: 0, 0.25, 0.6, 1). No other text."""
 
     try:
+        aux_model = resolve_aux_model()
+        gate_messages = [{"role": "system", "content": orchestrator_prompt}]
+        request_id = None
+        if session_id and group_id:
+            from chat_log import log_llm_call
+
+            request_id = log_llm_call(
+                session_id,
+                group_id,
+                "reply_probability_request",
+                actor=bot_name,
+                messages=gate_messages,
+                extra={
+                    "call_type": "reply_probability",
+                    "model": aux_model,
+                    "trigger_user": user_id,
+                    "trigger_text": (user_text or "")[:500],
+                },
+            )
         text = await create_chat_completion(
-            model=resolve_aux_model(),
-            messages=[{"role": "system", "content": orchestrator_prompt}],
+            model=aux_model,
+            messages=gate_messages,
             cap_tokens=12,
             temperature=0.2,
             session_id=session_id,
             group_id=group_id,
             call_type="reply_probability",
+            request_id=request_id,
         )
         match = re.search(r"0?\.\d+|1\.0*|1|0", text)
         if match:
@@ -560,19 +696,36 @@ async def build_style_mimic_hint(
 
     summary = f"~{avg_words:.0f} words per message; informal chat."
     try:
+        aux_model = resolve_aux_model()
+        mimic_messages = [
+            {
+                "role": "system",
+                "content": (
+                    f"Summarize how '{target_name}' writes in 2 short bullets: length, tone, "
+                    f"slang/typos/punctuation. Be concrete.\n\nMessages:\n"
+                    + "\n".join(f"- {t}" for t in recent)
+                ),
+            }
+        ]
+        if session_id and group_id:
+            from chat_log import log_llm_call
+
+            log_llm_call(
+                session_id,
+                group_id,
+                "style_mimic_request",
+                actor=speaker_bot_name,
+                messages=mimic_messages,
+                extra={
+                    "call_type": "style_mimic",
+                    "model": aux_model,
+                    "mimic_target": target_name,
+                },
+            )
         summary = (
             await create_chat_completion(
-                model=resolve_aux_model(),
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            f"Summarize how '{target_name}' writes in 2 short bullets: length, tone, "
-                            f"slang/typos/punctuation. Be concrete.\n\nMessages:\n"
-                            + "\n".join(f"- {t}" for t in recent)
-                        ),
-                    }
-                ],
+                model=aux_model,
+                messages=mimic_messages,
                 cap_tokens=90,
                 temperature=0.2,
                 session_id=session_id,

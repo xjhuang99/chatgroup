@@ -836,6 +836,16 @@ class MatchManager:
                 self.ensure_group_member_names(session_id, group_info)
             self.active_rooms[session_id][group_id] = group_info
             if members:
+                from chat_log import log_group_created
+
+                log_group_created(
+                    session_id,
+                    group_id,
+                    members=list(members),
+                    member_names=dict(group_info.get("member_names", {})),
+                    condition=group_info.get("condition"),
+                )
+            if members:
                 for muid in members:
                     self.user_locations[muid] = {"session_id": session_id, "group_id": group_id}
                     self.record_participant_group(session_id, muid, group_id)

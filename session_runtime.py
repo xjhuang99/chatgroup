@@ -10,10 +10,12 @@ from typing import Callable, Dict, List, Optional, Set
 
 from match_manager import match_manager, SessionConfig, MatchManager
 from context_manager import get_or_create_context, get_context
-from bot_manager import compute_typing_delay_seconds, get_or_create_bot_from_cfg, resolve_chat_model
+from bot_manager import get_or_create_bot_from_cfg
 from db.database import get_room_history, save_message
 from cache_manager import cache_manager
 from activity_logger import activity_logger
+from human_defaults import HUMAN_LIKE_SESSION
+from chat_log import log_ai_opening, log_session_ended
 
 turn_timer_tasks: Dict[str, asyncio.Task] = {}
 _opening_locks: Dict[str, asyncio.Lock] = {}
@@ -318,6 +320,21 @@ async def notify_session_ended(session_id: str, group_id: str, reason: str):
     group_info = match_manager.get_group_info(session_id, group_id) or {}
     cancel_turn_timer(session_id, group_id)
 
+    duration_seconds = None
+    started = _parse_group_started_at(group_info)
+    if started:
+        duration_seconds = max(0.0, (datetime.now() - started).total_seconds())
+    log_session_ended(
+        session_id,
+        group_id,
+        reason=reason,
+        duration_seconds=duration_seconds,
+        extra={
+            "members": list(group_info.get("members", [])),
+            "member_names": dict(group_info.get("member_names", {})),
+        },
+    )
+
     base = {
         "type": "session_ended",
         "reason": reason,
@@ -394,31 +411,28 @@ async def send_ai_opening_message(session_id: str, group_id: str, bot_cfg: Dict,
     ctx = get_context(group_id)
     group_info = match_manager.get_group_info(session_id, group_id) or {}
     bot = get_or_create_bot_from_cfg(group_id, bot_cfg, group_info)
-    peer_names = [
-        b["name"] for b in (session.bots if session else [])
-        if b.get("name") and b["name"] != bot_name
-    ]
-    opening_prompt = (
-        "[Conversation just started. One short casual opener (1–2 sentences)— "
-        "like texting teammates, not a meeting speech. No numbered lists.]"
+
+    hs = HUMAN_LIKE_SESSION
+    opening_delay = float(
+        getattr(session, "opening_delay_seconds", None)
+        if session and getattr(session, "opening_delay_seconds", None) is not None
+        else hs.get("opening_delay_seconds", 2.0)
     )
-    reply = await bot.generate_response(
-        "system",
-        opening_prompt,
-        "",
-        temperature=bot_cfg.get("temperature", 0.7),
-        peer_names=peer_names,
-        max_words=bot_cfg.get("max_words", 35),
-        min_words=bot_cfg.get("min_words", 1),
-        length_variation=bot_cfg.get("length_variation", True),
-        max_tokens=bot_cfg.get("max_tokens"),
-        emoji_enabled=bool(bot_cfg.get("emoji_enabled", False)),
-        model=resolve_chat_model(bot_cfg),
-        session_id=session_id,
+    default_text = (
+        (getattr(session, "default_opening_text", None) or "").strip()
+        if session
+        else ""
+    ) or str(hs.get("default_opening_text", "hi")).strip() or "hi"
+
+    await asyncio.sleep(max(0.0, opening_delay))
+    reply = default_text
+    log_ai_opening(
+        session_id,
+        group_id,
+        bot_name=bot.name,
+        text=reply,
+        delay_seconds=opening_delay,
     )
-    if not reply:
-        return
-    await asyncio.sleep(compute_typing_delay_seconds(reply, bot_cfg.get("typing_cps", 4)))
     cache_manager.cache_message(group_id, bot.name, reply)
     await save_message(group_id, bot.name, reply)
     if ctx:

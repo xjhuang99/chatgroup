@@ -1118,7 +1118,8 @@ function renderExportTab() {
         <div class="export-card">
             <strong>${r.id}</strong>
             <div class="text-sm">${r.message_count} messages</div>
-            <a href="/api/export/room/${encodeURIComponent(r.id)}/messages" download class="btn-export">Download CSV</a>
+            <a href="/api/export/room/${encodeURIComponent(r.id)}/messages" download class="btn-export">Messages CSV</a>
+            <a href="/api/export/room/${encodeURIComponent(r.id)}/research_log" download class="btn-export" style="margin-left:6px;">Research log CSV</a>
         </div>
     `).join('') : '<p class="empty-state">No rooms yet</p>';
 }

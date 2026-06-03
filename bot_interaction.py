@@ -39,6 +39,28 @@ def bot_names(session) -> List[str]:
     return [b.get("name") for b in (session.bots or []) if b.get("name")]
 
 
+def message_mentions_name(text: str, name: str, *, require_at: bool = False) -> bool:
+    """True if message @-mentions name, or (mode 3) uses name as a whole word."""
+    if not name or not text:
+        return False
+    if re.search(rf"@{re.escape(name)}\b", text, re.IGNORECASE):
+        return True
+    if require_at:
+        return False
+    return bool(re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE))
+
+
+def parse_at_mentions(text: str, names: List[str]) -> List[str]:
+    """Names explicitly @-mentioned in text (case-insensitive, word boundary)."""
+    if not text or not names:
+        return []
+    found: List[str] = []
+    for name in sorted(set(names), key=len, reverse=True):
+        if re.search(rf"@{re.escape(name)}\b", text, re.IGNORECASE):
+            found.append(name)
+    return found
+
+
 def all_peer_names(session, group_info=None, exclude: Optional[str] = None) -> List[str]:
     """Humans + bots in the room (for prompts and mentions)."""
     names: List[str] = []
@@ -149,7 +171,7 @@ def bots_for_message(session, message_text: str) -> List[Dict]:
         return [
             b
             for b in bots
-            if f"@{b['name']}" in text or b["name"].lower() in text.lower()
+            if message_mentions_name(text, b.get("name") or "")
         ]
     # mode 1 / 4: all bots; mode 2 handled separately in main
     if mode == 2:

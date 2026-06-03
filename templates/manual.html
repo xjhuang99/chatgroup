@@ -184,7 +184,7 @@
                     <tr><td>Session mode</td><td>Which personas may react to each incoming message — see <a href="#session-modes">Session modes</a> (distinct from persona mode).</td></tr>
                     <tr><td>Survey open (days)</td><td>How long new participants can enter the waiting queue (default 7).</td></tr>
                     <tr><td>Chat duration (min)</td><td>Each group chat ends this many minutes after the group is formed (Admin default <strong>3</strong>; adjust per study).</td></tr>
-                    <tr><td>Qualtrics log content</td><td><strong>Transcript</strong> — chat lines + export notes (e.g. mode 4 refresh). <strong>Full</strong> — research JSONL (prompts, persona mode 4 scores, refresh events) written into the Qualtrics transcript field (~240k cap). Dashboard can change this after create.</td></tr>
+                    <tr><td>Qualtrics log content</td><td><strong>Transcript</strong> — chat lines + export notes (e.g. mode 4 refresh). <strong>Full</strong> — research log with <strong>full system prompts</strong> per LLM call, Mode 2 <code>intent_router_request</code>, Mode 4 gate, bot replies, etc. (~240k cap). Same events as Dashboard → Export → <strong>Research log CSV</strong> per <code>GRP-…</code>.</td></tr>
                     <tr><td>API cap / group</td><td>Max estimated API spend per <code>GRP-…</code> room (default <strong>$8</strong>). Dashboard → Edit updates new and <em>active</em> groups.</td></tr>
                     <tr><td>Participant names</td><td>Optional comma-separated display names for humans in join order, e.g. <code>c,d</code>. Leave blank to use auto IDs.</td></tr>
                 </tbody>
@@ -248,7 +248,7 @@
                     <tr><td>Turn duration</td><td>Seconds per turn when Turns = timed (shown only for timed mode).</td></tr>
                     <tr><td>Style mimic</td><td>When On, non-target personas mimic one teammate’s message length and tone.</td></tr>
                     <tr><td>Style target</td><td>Display name to mimic (often a human, e.g. <code>c</code>).</td></tr>
-                    <tr><td>AI opens chat</td><td><strong>Yes</strong> (preset) — a randomly chosen persona sends a short opener when the room starts. <strong>No</strong> — wait for a human message first.</td></tr>
+                    <tr><td>AI opens chat</td><td><strong>Yes</strong> (preset) — after <strong>2 seconds</strong>, a randomly chosen persona sends <strong>hi</strong> when the room starts (no API call for that line). <strong>No</strong> — wait for a human message first.</td></tr>
                     <tr><td>Qualtrics</td><td><strong>On</strong> — write <code>transcript</code> and <code>chat_status</code> to Qualtrics Embedded Data when the chat ends. <strong>Off</strong> — use Dashboard export only.</td></tr>
                 </tbody>
             </table>

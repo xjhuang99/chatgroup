@@ -90,6 +90,11 @@
             white-space: nowrap; color: var(--orange-dark); font-weight: 600;
         }
         .mention-btn:hover { background: var(--orange-pale); }
+        .message-group.mention-for-you {
+            outline: 2px solid var(--orange);
+            outline-offset: 2px;
+            border-radius: 10px;
+        }
         .input-row {
             display: flex; gap: 10px; max-width: 720px;
             width: 100%; margin: 0 auto; align-items: center;
@@ -261,15 +266,61 @@
         return `${sender}\0${text}`;
     }
 
-    function queueChatMessage(sender, text) {
+    function escapeRegex(s) {
+        return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function messageMentionsMe(text, mentions) {
+        if (!myDisplayName) return false;
+        if (Array.isArray(mentions) && mentions.length) {
+            return mentions.some((m) => String(m).toLowerCase() === myDisplayName.toLowerCase());
+        }
+        return new RegExp(`@${escapeRegex(myDisplayName)}\\b`, 'i').test(text || '');
+    }
+
+    function queueChatMessage(sender, text, mentions) {
         const key = messageContentKey(sender, text);
         if (seenMessageContent.has(key)) return;
         seenMessageContent.add(key);
         if (chatUiRevealed) {
-            renderMessage(sender, text);
+            renderMessage(sender, text, mentions);
         } else {
-            pendingChatMessages.push({ sender, text });
+            pendingChatMessages.push({ sender, text, mentions });
         }
+    }
+
+    function rebuildMentionBar() {
+        mentionBar.innerHTML = '';
+        const names = [];
+        const seen = new Set();
+        (groupHumanNames || []).forEach((name) => {
+            if (name && name !== myDisplayName && !seen.has(name)) {
+                seen.add(name);
+                names.push(name);
+            }
+        });
+        activeBots.forEach((bot) => {
+            if (bot.name && !seen.has(bot.name)) {
+                seen.add(bot.name);
+                names.push(bot.name);
+            }
+        });
+        if (!names.length) {
+            mentionBar.style.display = 'none';
+            return;
+        }
+        mentionBar.style.display = 'flex';
+        names.forEach((name) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'mention-btn';
+            btn.textContent = `@${name}`;
+            btn.onclick = () => {
+                msgInput.value = `@${name} ` + msgInput.value;
+                msgInput.focus();
+            };
+            mentionBar.appendChild(btn);
+        });
     }
 
     const onboardingOverlay = document.getElementById('onboarding-overlay');
@@ -343,7 +394,7 @@
         inputArea.style.display = 'block';
         document.getElementById('room-title').textContent = 'Team Discussion';
         updateGroupRoster();
-        pendingChatMessages.forEach((m) => renderMessage(m.sender, m.text));
+        pendingChatMessages.forEach((m) => renderMessage(m.sender, m.text, m.mentions));
         pendingChatMessages.length = 0;
         setConnected(window.chatWebSocket && window.chatWebSocket.readyState === WebSocket.OPEN);
     }
@@ -484,15 +535,16 @@
         }
     }
 
-    function renderMessage(sender, text) {
+    function renderMessage(sender, text, mentions) {
         const botMatch = activeBots.find(b => b.name === sender);
         const isBot = !!botMatch;
         const isOwn = myDisplayName && sender === myDisplayName && !isBot;
         const showAsBot = isBot && (!botMatch.avatar_type || botMatch.avatar_type === 'bot');
         const avatarKind = avatarKindForSender(botMatch, isBot);
+        const forYou = !isOwn && messageMentionsMe(text, mentions);
 
         const group = document.createElement('div');
-        group.className = `message-group ${isOwn ? 'own' : 'other'}`;
+        group.className = `message-group ${isOwn ? 'own' : 'other'}${forYou ? ' mention-for-you' : ''}`;
 
         const avatar = createMessageAvatar(avatarKind);
 
@@ -701,24 +753,12 @@
             if (!res.ok) return;
             sessionConfig = await res.json();
             activeBots = (sessionConfig.bots || []).filter(b => b.name);
-
-            mentionBar.innerHTML = '';
-            activeBots.forEach(bot => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'mention-btn';
-                btn.textContent = `@${bot.name}`;
-                btn.onclick = () => {
-                    msgInput.value = `@${bot.name} ` + msgInput.value;
-                    msgInput.focus();
-                };
-                mentionBar.appendChild(btn);
-            });
             if (groupId) {
                 await loadGroupRoster();
             } else {
                 updateGroupRoster();
             }
+            rebuildMentionBar();
         } catch (e) {
             console.error('Config load error:', e);
         }
@@ -823,7 +863,7 @@
                     resolve(myDisplayName);
                 }
                 if (chatUiRevealed) {
-                    loadGroupRoster();
+                    loadGroupRoster().then(() => rebuildMentionBar());
                     setConnected(true);
                 }
                 return;
@@ -845,7 +885,7 @@
                 return;
             }
             if (payload.type === 'message') {
-                queueChatMessage(payload.sender, payload.text);
+                queueChatMessage(payload.sender, payload.text, payload.mentions);
                 return;
             }
             };
@@ -883,7 +923,9 @@
         const val = msgInput.value.trim();
         if (!val || !myDisplayName || !window.chatWebSocket || window.chatWebSocket.readyState !== WebSocket.OPEN) return;
         window.chatWebSocket.send(val);
-        renderMessage(myDisplayName, val);
+        const mentions = (groupHumanNames || []).concat(activeBots.map(b => b.name))
+            .filter((n) => n && new RegExp(`@${escapeRegex(n)}\\b`, 'i').test(val));
+        renderMessage(myDisplayName, val, mentions);
         msgInput.value = '';
         msgInput.focus();
     }

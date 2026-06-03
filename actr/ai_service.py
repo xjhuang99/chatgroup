@@ -27,7 +27,14 @@ from bot_manager import (
     persona_mode4_should_reply,
     resolve_chat_model,
 )
-from chat_log import append_chat_log_event
+from chat_log import (
+    append_chat_log_event,
+    log_llm_response,
+    log_mode4_timing,
+    log_orchestrate,
+    next_turn_id,
+)
+from bot_interaction import parse_at_mentions
 from bot_queue import BotResponse, bot_response_queue
 from usage_tracker import SpendCapExceeded, check_can_spend
 from cache_manager import cache_manager
@@ -103,10 +110,7 @@ async def _persona_mode4_gate(
     return True
 
 
-def _log_llm_turn(
-    session_id: str,
-    group_id: str,
-    bot_name: str,
+def _bot_reply_log_meta(
     bot_cfg: Dict,
     *,
     attempt: int,
@@ -115,21 +119,50 @@ def _log_llm_turn(
     summary_chars: int,
     model: str,
     refresh_suffix: str = "",
+    turn_id: Optional[str] = None,
+) -> Dict:
+    return {
+        "attempt": attempt + 1,
+        "model": model,
+        "persona_mode": int(bot_cfg.get("mode", 1) or 1),
+        "persona_prompt": (bot_cfg.get("prompt") or "")[:4000],
+        "trigger_text": (user_text or "")[:800],
+        "llm_user_text": (gen_user_text or "")[:2000],
+        "context_summary_chars": summary_chars,
+        "refresh_suffix": refresh_suffix or None,
+        "turn_id": turn_id,
+    }
+
+
+def _emit_llm_response_log(
+    session_id: str,
+    group_id: str,
+    bot_name: str,
+    reply: str,
+    log_meta: Optional[Dict],
+    *,
+    typing_delay_sec: Optional[float] = None,
 ) -> None:
-    append_chat_log_event(
+    if not log_meta or not log_meta.get("request_id"):
+        return
+    extra = {
+        "attempt": log_meta.get("attempt"),
+        "turn_id": log_meta.get("turn_id"),
+        "persona_mode": log_meta.get("persona_mode"),
+        "fallback_used": bool(log_meta.get("fallback_used")),
+    }
+    if typing_delay_sec is not None:
+        extra["typing_delay_sec"] = round(typing_delay_sec, 2)
+    raw = log_meta.get("raw_model_output")
+    if raw:
+        extra["raw_model_output"] = raw
+    log_llm_response(
         session_id,
         group_id,
-        "llm_request",
-        {
-            "attempt": attempt + 1,
-            "model": model,
-            "persona_prompt": (bot_cfg.get("prompt") or "")[:4000],
-            "trigger_text": (user_text or "")[:800],
-            "llm_user_text": (gen_user_text or "")[:2000],
-            "context_summary_chars": summary_chars,
-            "refresh_suffix": refresh_suffix or None,
-        },
+        request_id=log_meta["request_id"],
         actor=bot_name,
+        reply=reply,
+        extra=extra,
     )
 
 
@@ -166,6 +199,7 @@ async def _staggered_enqueue(
     chain_depth: int,
     settings: Dict,
     jitter_max: float,
+    turn_id: Optional[str] = None,
 ) -> None:
     if jitter_max > 0:
         await asyncio.sleep(random.uniform(0, jitter_max))
@@ -180,6 +214,7 @@ async def _staggered_enqueue(
         group_info,
         chain_depth,
         settings,
+        turn_id=turn_id,
     )
 
 
@@ -200,6 +235,7 @@ async def _enqueue_single_bot(
     group_info: Dict,
     chain_depth: int,
     settings: Dict,
+    turn_id: Optional[str] = None,
 ) -> None:
     bot_instance = get_or_create_bot_from_cfg(group_id, bot_cfg, group_info)
     max_ctx = resolve_context_max_chars(bot_cfg)
@@ -221,6 +257,7 @@ async def _enqueue_single_bot(
             group_info,
             chain_depth=chain_depth,
             settings=settings,
+            turn_id=turn_id,
         )
 
     await bot_response_queue.enqueue(
@@ -246,6 +283,8 @@ async def _orchestrate_bot_replies(
     group_info: Dict,
     chain_depth: int,
     settings: Dict,
+    trigger_kind: str = "human",
+    turn_id: Optional[str] = None,
 ) -> None:
     if not (session_cfg.bot_enabled and session_cfg.bots):
         return
@@ -256,25 +295,54 @@ async def _orchestrate_bot_replies(
         print(f"[AI] 🛑 Spend cap / ended: {reason}")
         return
 
-    mode = session_cfg.session_mode
+    mode = int(session_cfg.session_mode or 1)
     print(f"[AI] 🤖 Orchestrate mode={mode} chain_depth={chain_depth}")
 
+    if chain_depth == 0:
+        turn_id = next_turn_id(group_id)
+        group_info["current_turn_id"] = turn_id
+    else:
+        turn_id = turn_id or group_info.get("current_turn_id") or next_turn_id(group_id)
+
+    router_candidates = [b.get("name") for b in (session_cfg.bots or []) if b.get("name")]
+    bots_matched = bots_for_message(session_cfg, data)
+    bots_eligible_names = [b.get("name") for b in bots_matched if b.get("name")]
+
     bot_list: List[Dict] = []
+    chosen_router = None
     if mode == 2:
         intent_ctx = resolve_context_max_chars(session_cfg.bots[0] if session_cfg.bots else {})
         history_text = ctx.get_context_summary(max_chars=min(50_000, intent_ctx))
-        chosen_name = await analyze_intent(
+        chosen_router = await analyze_intent(
             data, session_cfg.bots, history_text, session_id=session_id, group_id=group_id
         )
-        if not chosen_name:
-            chosen_name = random.choice(session_cfg.bots)["name"]
-        bot_cfg = next((b for b in session_cfg.bots if b["name"] == chosen_name), None)
+        if not chosen_router:
+            chosen_router = random.choice(session_cfg.bots)["name"]
+        bot_cfg = next((b for b in session_cfg.bots if b["name"] == chosen_router), None)
         if bot_cfg:
             bot_list = [bot_cfg]
     else:
-        bot_list = bots_for_message(session_cfg, data)
+        bot_list = list(bots_matched)
 
     bot_list = filter_bots_for_trigger(bot_list, display_name)
+    bots_queued_names = [b.get("name") for b in bot_list if b.get("name")]
+
+    log_orchestrate(
+        session_id,
+        group_id,
+        turn_id=turn_id,
+        trigger_sender=display_name,
+        trigger_kind=trigger_kind,
+        chain_depth=chain_depth,
+        session_mode=mode,
+        bots_eligible=bots_eligible_names,
+        bots_queued=bots_queued_names,
+        extra={
+            "router_candidates": router_candidates if mode == 2 else None,
+            "chosen_router": chosen_router if mode == 2 else None,
+            "trigger_text": (data or "")[:500],
+        },
+    )
 
     if not bot_list:
         return
@@ -298,6 +366,7 @@ async def _orchestrate_bot_replies(
                     chain_depth,
                     settings,
                     jitter_max,
+                    turn_id=turn_id,
                 )
             )
             for bot_cfg in bot_list
@@ -318,6 +387,7 @@ async def _orchestrate_bot_replies(
                 group_info,
                 chain_depth,
                 settings,
+                turn_id=turn_id,
             )
     await bot_response_queue.ensure_queue_processor(group_id)
 
@@ -366,9 +436,18 @@ async def process_ai_logic(
         if chain_depth == 0 and trigger_kind == "human":
             should_flush = cache_manager.cache_message(group_id, display_name, data)
             init_room_context_state(group_info)
+            turn_id = next_turn_id(group_id)
+            group_info["current_turn_id"] = turn_id
+            peer_names = all_peer_names(session_cfg, group_info)
+            mentions = parse_at_mentions(data, peer_names)
             if is_parallel_session(session_cfg):
                 await commit_room_message(
-                    group_id, display_name, data, group_info, bump_for_peers=True
+                    group_id,
+                    display_name,
+                    data,
+                    group_info,
+                    bump_for_peers=True,
+                    session_id=session_id,
                 )
             else:
                 await save_message(group_id, display_name, data)
@@ -378,7 +457,11 @@ async def process_ai_logic(
                 session_id,
                 group_id,
                 "human_message",
-                {"text": data[:2000]},
+                {
+                    "text": data[:2000],
+                    "turn_id": turn_id,
+                    "mentions": mentions,
+                },
                 actor=display_name,
             )
             if is_group_chat_live(match_manager, session_id, group_id):
@@ -396,6 +479,8 @@ async def process_ai_logic(
             group_info,
             chain_depth,
             settings,
+            trigger_kind=trigger_kind,
+            turn_id=group_info.get("current_turn_id"),
         )
 
     except SpendCapExceeded as e:
@@ -415,6 +500,7 @@ async def _handle_bot_reply_mode4(
     group_info: Dict,
     chain_depth: int,
     settings: Dict,
+    turn_id: Optional[str] = None,
 ) -> None:
     """Parallel personas: refresh on peer commits; transcript notes on refresh attempts."""
     session_cfg = match_manager.get_session(session_id)
@@ -455,6 +541,8 @@ async def _handle_bot_reply_mode4(
     if not clean_text:
         clean_text = "Continue the conversation naturally based on prior context."
 
+    turn_id = turn_id or group_info.get("current_turn_id")
+
     for attempt in range(max_refresh_attempts):
         version_at_start = get_context_version(group_info)
         if bot_response_queue.is_room_cancelled(group_id):
@@ -476,6 +564,17 @@ async def _handle_bot_reply_mode4(
         ):
             print(f"[BOT]    Mode4 {bot.name}: pre_delay interrupted (peer message)")
             continue
+        else:
+            log_mode4_timing(
+                session_id,
+                group_id,
+                bot_name=bot.name,
+                request_id=None,
+                turn_id=turn_id,
+                pre_delay_sec=pre_delay,
+                rethink_sec=None,
+                attempt=attempt + 1,
+            )
 
         ctx = get_context(group_id)
         full_summary = ctx.get_context_summary(max_chars=max_ctx) if ctx else ""
@@ -498,10 +597,7 @@ async def _handle_bot_reply_mode4(
             )
 
         model = resolve_chat_model(bot_cfg)
-        _log_llm_turn(
-            session_id,
-            group_id,
-            bot.name,
+        log_meta = _bot_reply_log_meta(
             bot_cfg,
             attempt=attempt,
             user_text=user_text,
@@ -509,7 +605,19 @@ async def _handle_bot_reply_mode4(
             summary_chars=len(full_summary or ""),
             model=model,
             refresh_suffix=refresh_suffix,
+            turn_id=turn_id,
         )
+        if attempt > 0:
+            log_mode4_timing(
+                session_id,
+                group_id,
+                bot_name=bot.name,
+                request_id=log_meta.get("request_id"),
+                turn_id=turn_id,
+                pre_delay_sec=0,
+                rethink_sec=rethink_seconds,
+                attempt=attempt + 1,
+            )
         reply = await bot.generate_response(
             user_id,
             gen_user_text,
@@ -526,6 +634,7 @@ async def _handle_bot_reply_mode4(
             emoji_enabled=bool(bot_cfg.get("emoji_enabled", False)),
             model=model,
             session_id=session_id,
+            log_meta=log_meta,
         )
         if not reply:
             return
@@ -555,14 +664,6 @@ async def _handle_bot_reply_mode4(
             )
             continue
 
-        append_chat_log_event(
-            session_id,
-            group_id,
-            "llm_response",
-            {"attempt": attempt + 1, "reply": reply, "typing_delay_sec": round(typing_delay, 2)},
-            actor=bot.name,
-        )
-
         note = None
         if attempt > 0:
             note = transcript_note_for_refresh(
@@ -570,13 +671,38 @@ async def _handle_bot_reply_mode4(
                 group_info.get("last_context_bump_sender") or "?",
                 group_info.get("last_context_bump_text") or "",
             )
+            append_chat_log_event(
+                session_id,
+                group_id,
+                "mode4_transcript_note",
+                {
+                    "attempt": attempt + 1,
+                    "note": note,
+                    "context_version": get_context_version(group_info),
+                },
+                actor=bot.name,
+            )
 
         async with get_group_lock(group_id):
             if is_context_stale(group_info, version_at_start, bot.name):
                 continue
             should_flush = cache_manager.cache_message(group_id, bot.name, reply)
             await commit_room_message(
-                group_id, bot.name, reply, group_info, note=note, bump_for_peers=True
+                group_id,
+                bot.name,
+                reply,
+                group_info,
+                note=note,
+                bump_for_peers=True,
+                session_id=session_id,
+            )
+            _emit_llm_response_log(
+                session_id,
+                group_id,
+                bot.name,
+                reply,
+                log_meta,
+                typing_delay_sec=typing_delay,
             )
             await broadcast(
                 session_id, group_id, {"type": "message", "sender": bot.name, "text": reply}
@@ -642,6 +768,7 @@ async def handle_bot_reply(
     group_info=None,
     chain_depth: int = 0,
     settings: Optional[Dict] = None,
+    turn_id: Optional[str] = None,
 ) -> None:
     """Handles persona-specific AI generation and broadcasting."""
     try:
@@ -663,6 +790,7 @@ async def handle_bot_reply(
                 group_info,
                 chain_depth,
                 settings or interaction_settings(session_cfg),
+                turn_id=turn_id or group_info.get("current_turn_id"),
             )
             return
 
@@ -741,16 +869,14 @@ async def handle_bot_reply(
                     print(f"[BOT]    style mimic '{target}' → {bot.name}")
 
             model = resolve_chat_model(bot_cfg)
-            _log_llm_turn(
-                session_id,
-                group_id,
-                bot.name,
+            log_meta = _bot_reply_log_meta(
                 bot_cfg,
                 attempt=0,
                 user_text=user_text,
                 gen_user_text=clean_text,
                 summary_chars=len(full_summary or ""),
                 model=model,
+                turn_id=turn_id or group_info.get("current_turn_id"),
             )
             print(f"[BOT] 🔄 Calling generate_response for {bot.name}...")
             reply = await bot.generate_response(
@@ -769,21 +895,18 @@ async def handle_bot_reply(
                 emoji_enabled=emoji_enabled,
                 model=model,
                 session_id=session_id,
+                log_meta=log_meta,
             )
             if not reply:
                 print(f"[BOT] ⚠️ {bot.name} returned empty reply")
                 return
 
-            append_chat_log_event(
-                session_id,
-                group_id,
-                "llm_response",
-                {"attempt": 1, "reply": reply},
-                actor=bot.name,
-            )
             reply = apply_mention_prefix(reply, mention_target, settings)
 
             typing_delay = compute_typing_delay_seconds(reply, typing_cps)
+            _emit_llm_response_log(
+                session_id, group_id, bot.name, reply, log_meta, typing_delay_sec=typing_delay
+            )
             print(f"[BOT] ✅ {bot.name} reply: {reply[:80]!r} (typing +{typing_delay:.1f}s)")
             await asyncio.sleep(typing_delay)
             await broadcast(session_id, group_id, {"type": "message", "sender": bot.name, "text": reply})

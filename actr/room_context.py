@@ -63,6 +63,7 @@ async def commit_room_message(
     *,
     note: Optional[str] = None,
     bump_for_peers: bool = True,
+    session_id: Optional[str] = None,
 ) -> None:
     """
     Persist message, update in-memory context, and optionally bump version for peer bots.
@@ -79,6 +80,16 @@ async def commit_room_message(
         group_info["context_version"] = get_context_version(group_info) + 1
         group_info["last_context_bump_sender"] = sender
         group_info["last_context_bump_text"] = text or ""
+        if session_id:
+            from chat_log import log_context_bump
+
+            log_context_bump(
+                session_id,
+                group_id,
+                context_version=get_context_version(group_info),
+                sender=sender,
+                text_preview=text or "",
+            )
 
 
 def mode4_settings(session_cfg) -> Tuple[float, float, int]:

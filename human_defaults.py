@@ -81,6 +81,8 @@ HUMAN_LIKE_SESSION: Dict[str, Any] = {
     "mention_prob": 0.0,
     "self_correction_prob": 0.0,
     "ai_starts_conversation": True,
+    "opening_delay_seconds": 2.0,
+    "default_opening_text": "hi",
     "style_mimic_enabled": False,
     "turn_mode": "none",
 }
