@@ -8,10 +8,18 @@ from activity_logger import activity_logger
 from admin_auth import is_super_admin, require_admin, require_auth, require_session_access
 from error_handler import error_handler
 from human_defaults import GPT_CHAT_MODELS, normalize_gpt_chat_model
-from match_manager import match_manager
+from match_manager import match_manager, resolve_human_group_bounds
 from session_runtime import build_participant_export, compute_chat_status
 
 router = APIRouter(tags=["sessions"])
+
+
+def _effective_participant_names(session) -> list:
+    """Human name pool used at join (letters after bots when Admin list is empty)."""
+    from participant_naming import participant_name_pool
+
+    min_h, _ = resolve_human_group_bounds(session)
+    return participant_name_pool(session, min_h)
 
 
 @router.get("/api/admin/human-defaults", dependencies=[Depends(require_auth)])
@@ -146,6 +154,7 @@ async def get_session_config(
         "min_humans_per_group": getattr(session, "min_humans_per_group", session.group_size),
         "max_humans_per_group": getattr(session, "max_humans_per_group", session.group_size),
         "participant_names": session.participant_names,
+        "effective_participant_names": _effective_participant_names(session),
         "session_mode": session.session_mode,
         "history_limit": session.history_limit,
         "qualtrics_handoff_enabled": session.qualtrics_handoff_enabled,

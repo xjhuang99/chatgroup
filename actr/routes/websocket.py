@@ -54,9 +54,11 @@ async def websocket_chat(websocket: WebSocket, session_id: str, group_id: str, u
         group_info["member_names"] = {}
 
     if uid not in group_info["member_names"]:
+        from participant_naming import pick_human_display_name
+
         assigned_names = set(group_info["member_names"].values())
-        available_names = [name for name in session.participant_names if name not in assigned_names]
-        group_info["member_names"][uid] = available_names[0] if available_names else uid
+        name = pick_human_display_name(session, assigned_names)
+        group_info["member_names"][uid] = name if name else uid
 
     if uid not in group_info["members"]:
         group_info["members"].append(uid)

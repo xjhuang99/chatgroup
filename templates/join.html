@@ -148,7 +148,9 @@
                 const res = await fetch(`/api/sessions/${sessionId}/config`);
                 if (!res.ok) throw new Error('Session not found');
                 const config = await res.json();
-                participantNames = config.participant_names || [];
+                participantNames = config.effective_participant_names
+                    || config.participant_names
+                    || [];
 
                 // Check how many people already joined this group
                 const groupRes = await fetch(`/api/groups/${sessionId}/${groupId}/info`);

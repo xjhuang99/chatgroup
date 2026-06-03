@@ -33,9 +33,12 @@ async def export_session_activity(session_id: str):
             ["Group Chat Duration (min)", getattr(session_cfg, "group_chat_duration_minutes", "")]
         )
         writer.writerow(["History Limit", getattr(session_cfg, "history_limit", "")])
-        writer.writerow(
-            ["Participant Names", ", ".join(getattr(session_cfg, "participant_names", []) or [])]
-        )
+        from actr.routes.sessions import _effective_participant_names
+
+        explicit = ", ".join(getattr(session_cfg, "participant_names", []) or [])
+        effective = ", ".join(_effective_participant_names(session_cfg))
+        writer.writerow(["Participant Names (admin)", explicit or "(auto letters after bots)"])
+        writer.writerow(["Participant Names (effective)", effective])
         writer.writerow([])
         writer.writerow(["=== BOT CONFIGURATION ==="])
         writer.writerow(

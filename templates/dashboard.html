@@ -689,7 +689,7 @@ async function selectSession(sessionId) {
                     <div class="form-group"><label>Max humans / group</label><input type="number" id="modMaxHumans" min="1" max="20" disabled title="When full, next participant joins another forming group"></div>
                     <div class="form-group"><label>History limit</label><input type="number" id="modHistoryLimit" min="100" max="50000" disabled title="Max messages kept in memory and returned on reload"></div>
                 </div>
-                <div class="form-group"><label>Participant names <span class="hint">(comma-separated, optional)</span></label><input type="text" id="modParticipantNames" placeholder="c,d" disabled></div>
+                <div class="form-group"><label>Participant names <span class="hint">(comma-separated, optional)</span></label><input type="text" id="modParticipantNames" placeholder="blank → letters after bots" disabled></div>
                 <div class="param-section-title">Timing</div>
                 <div class="grid-2">
                     <div class="form-group"><label>Survey open (days)</label><input type="number" id="modSurveyOpenDays" min="1" max="90" disabled></div>

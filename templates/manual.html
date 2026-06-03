@@ -186,7 +186,7 @@
                     <tr><td>Chat duration (min)</td><td>Each group chat ends this many minutes after the group is formed (Admin default <strong>3</strong>; adjust per study).</td></tr>
                     <tr><td>Qualtrics log content</td><td><strong>Transcript</strong> — chat lines + export notes (e.g. mode 4 refresh). <strong>Full</strong> — research log with <strong>full system prompts</strong> per LLM call, Mode 2 <code>intent_router_request</code>, Mode 4 gate, bot replies, etc. (~240k cap). Same events as Dashboard → Export → <strong>Research log CSV</strong> per <code>GRP-…</code>.</td></tr>
                     <tr><td>API cap / group</td><td>Max estimated API spend per <code>GRP-…</code> room (default <strong>$8</strong>). Dashboard → Edit updates new and <em>active</em> groups.</td></tr>
-                    <tr><td>Participant names</td><td>Optional comma-separated display names for humans in join order, e.g. <code>c,d</code>. Leave blank to use auto IDs.</td></tr>
+                    <tr><td>Participant names</td><td>Optional comma-separated human display names in join order, e.g. <code>c,d</code> when bots are <code>a,b</code>. Leave blank to auto-assign the next single letters after bot names (bots <code>a,b</code> → humans <code>c,d,…</code>).</td></tr>
                 </tbody>
             </table>
 

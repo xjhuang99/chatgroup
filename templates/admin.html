@@ -212,7 +212,7 @@
 
             <div class="form-group" style="margin-top:16px;">
                 <label>Participant names <span class="hint">(optional)</span></label>
-                <input type="text" id="participantNames" value="c" placeholder="c,d">
+                <input type="text" id="participantNames" value="" placeholder="leave blank → c,d after bots a,b">
             </div>
 
             <div class="card-title" style="margin-top:20px; border:none; padding-bottom:0;">Experiment</div>
@@ -829,7 +829,7 @@ function buildQualtricsFieldTable(sessionId, payload) {
         ['use_mentions', 'Server', 'Admin', '—', String(payload.use_mentions === true) + (payload.use_mentions ? ' (mention_prob ' + (payload.mention_prob ?? 0) + ')' : '')],
         ['self_correction_prob', 'Server', 'Admin', '—', String(payload.self_correction_prob ?? 0)],
         ['bot_enabled', 'Server', 'Admin', '—', String(payload.bot_enabled !== false)],
-        ['participant_names', 'Server', 'Admin', '—', (payload.participant_names || []).join(', ') || '(auto participant IDs)'],
+        ['participant_names', 'Server', 'Admin', '—', (payload.participant_names || []).join(', ') || '(auto: letters after bot names)'],
         ['assignment_mode', 'Server', 'Admin', '—', conditionOn ? 'stratified (forced when Condition On)' : (payload.assignment_mode || 'fifo')],
         ['condition_enabled', 'Server', 'Admin', '—',
             String(conditionOn) + ' (★ Example default: On — stratified matching by Qualtrics condition field)'],

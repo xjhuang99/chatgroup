@@ -740,14 +740,22 @@ class MatchManager:
 
     def expected_human_display_names(self, session: SessionConfig) -> List[str]:
         """Full human roster labels for this session (including slots still waiting in queue)."""
-        pool = list(session.participant_names or [])
+        from participant_naming import (
+            auto_letter_names,
+            bot_reserved_names,
+            participant_name_pool,
+            uses_explicit_participant_names,
+        )
+
         min_h, _ = resolve_human_group_bounds(session)
-        if pool:
-            if len(pool) >= min_h:
-                return list(pool[:min_h])
-            extra = [f"Participant {i + 1}" for i in range(len(pool), min_h)]
+        pool = participant_name_pool(session, min_h)
+        if len(pool) >= min_h:
+            return list(pool[:min_h])
+        if uses_explicit_participant_names(session):
+            taken = set(pool) | bot_reserved_names(session)
+            extra = auto_letter_names(taken, min_h - len(pool))
             return pool + extra
-        return [f"Participant {i + 1}" for i in range(min_h)]
+        return pool
 
     def get_queue_progress(
         self, session_id: str, uid: str, condition: Optional[str] = None
@@ -791,7 +799,8 @@ class MatchManager:
         session = self.sessions.get(session_id)
         if not session:
             return
-        pool = list(session.participant_names or [])
+        from participant_naming import pick_human_display_name
+
         if "member_names" not in group_info:
             group_info["member_names"] = {}
         taken = set(group_info["member_names"].values())
@@ -799,10 +808,10 @@ class MatchManager:
             if uid in group_info["member_names"]:
                 taken.add(group_info["member_names"][uid])
                 continue
-            available = [n for n in pool if n not in taken]
-            if available:
-                group_info["member_names"][uid] = available[0]
-                taken.add(available[0])
+            name = pick_human_display_name(session, taken)
+            if name:
+                group_info["member_names"][uid] = name
+                taken.add(name)
             else:
                 group_info["member_names"][uid] = uid
 
