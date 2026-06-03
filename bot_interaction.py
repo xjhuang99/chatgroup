@@ -39,12 +39,6 @@ def bot_names(session) -> List[str]:
     return [b.get("name") for b in (session.bots or []) if b.get("name")]
 
 
-def is_bot_sender(sender: str, session) -> bool:
-    if not sender or not session:
-        return False
-    return sender in bot_names(session)
-
-
 def all_peer_names(session, group_info=None, exclude: Optional[str] = None) -> List[str]:
     """Humans + bots in the room (for prompts and mentions)."""
     names: List[str] = []
@@ -157,7 +151,7 @@ def bots_for_message(session, message_text: str) -> List[Dict]:
             for b in bots
             if f"@{b['name']}" in text or b["name"].lower() in text.lower()
         ]
-    # mode 1 and fallback: all bots; mode 2 handled separately in main
+    # mode 1 / 4: all bots; mode 2 handled separately in main
     if mode == 2:
         return []
     return bots
@@ -183,9 +177,15 @@ def schedule_bot_chain(
     process_ai_logic_fn,
 ) -> None:
     """After any message (human or bot), optionally trigger another bot wave."""
+    from group_idle import is_group_chat_live
+    from match_manager import match_manager as mm
+
+    hs = HUMAN_LIKE_SESSION
+    if not is_group_chat_live(mm, session_id, group_id):
+        return
     if not settings.get("bot_reply_on_any_message"):
         return
-    max_depth = settings.get("max_chain_depth", 3)
+    max_depth = settings.get("max_chain_depth", hs["max_chain_depth"])
     if chain_depth >= max_depth:
         return
 

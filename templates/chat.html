@@ -241,6 +241,15 @@
     let activeBots = [];
     let sessionConfig = {};
     let myDisplayName = null;
+    let chatHistoryLoaded = false;
+    let historyReady = false;
+    const wsMessageBuffer = [];
+    const historyContentKeys = new Set();
+
+    function messageContentKey(sender, text) {
+        return `${sender}\0${text}`;
+    }
+
     const turnBanner = document.getElementById('turn-banner');
     // Track all known participants (display names) - ONLY real users, not bots
     const knownMembers = new Set();
@@ -343,15 +352,6 @@
         entry.receiptEl.textContent = `Read: ${readers}`;
     }
 
-    /* ---- Typing indicator (disabled) ---- */
-    const typingElems = {};
-    function showTyping(sender) {
-        // Typing indicators disabled
-    }
-    function hideTyping(sender) {
-        // Typing indicators disabled
-    }
-
     /* ---- Load session config ---- */
     async function loadSessionConfig() {
         try {
@@ -365,6 +365,46 @@
 
             // Do NOT add bot names to members display - only real users
         } catch (e) { console.error('Config load failed', e); }
+    }
+
+    function flushWsMessageBuffer() {
+        wsMessageBuffer.forEach((p) => {
+            const key = messageContentKey(p.sender, p.text);
+            if (historyContentKeys.has(key)) return;
+            historyContentKeys.add(key);
+            renderMessage(p.sender, p.text);
+        });
+        wsMessageBuffer.length = 0;
+    }
+
+    async function loadChatHistory() {
+        if (chatHistoryLoaded || !myDisplayName) return;
+        try {
+            const res = await fetch(
+                `/api/groups/${encodeURIComponent(sessionId)}/${encodeURIComponent(groupId)}/messages?participant_id=${encodeURIComponent(uid)}`
+            );
+            if (!res.ok) {
+                historyReady = true;
+                flushWsMessageBuffer();
+                return;
+            }
+            const data = await res.json();
+            chatHistoryLoaded = true;
+            const box = document.getElementById('chat-box');
+            (data.messages || []).forEach((m) => {
+                historyContentKeys.add(messageContentKey(m.sender, m.text));
+                renderMessage(m.sender, m.text);
+            });
+            if ((data.messages || []).length) {
+                box.classList.remove('loading');
+            }
+            historyReady = true;
+            flushWsMessageBuffer();
+        } catch (e) {
+            console.warn('History load failed', e);
+            historyReady = true;
+            flushWsMessageBuffer();
+        }
     }
 
     /* ---- Load existing members in the room ---- */
@@ -417,21 +457,22 @@
         try { payload = JSON.parse(event.data); } catch { return; }
         if (!payload || !payload.type) return;
 
+        if (payload.type === 'error') {
+            wsStatus.textContent = 'Unavailable';
+            statusDot.style.background = '#e74c3c';
+            alert(payload.message || 'Cannot join this chat.');
+            return;
+        }
         if (payload.type === 'display_name') {
             // Server tells us our display name
             myDisplayName = payload.name;
+            loadChatHistory();
             // Show notification
             const notif = document.createElement('div');
             notif.style.cssText = 'position:fixed; top:60px; left:50%; transform:translateX(-50%); background:var(--orange); color:white; padding:12px 24px; border-radius:8px; font-weight:600; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2);';
             notif.textContent = `You are ${myDisplayName}. You can start to talk.`;
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 3000);
-        } else if (payload.type === 'typing_start') {
-            showTyping(payload.sender);
-        } else if (payload.type === 'typing_chunk') {
-            // ignore chunks
-        } else if (payload.type === 'typing_end') {
-            hideTyping(payload.sender);
         } else if (payload.type === 'session_ended') {
             wsStatus.textContent = 'Session ended';
             statusDot.style.background = '#e74c3c';
@@ -450,9 +491,14 @@
         } else if (payload.type === 'turn_denied') {
             alert(payload.message || 'Not your turn.');
         } else if (payload.type === 'message') {
-            hideTyping(payload.sender);
+            if (!historyReady) {
+                wsMessageBuffer.push(payload);
+                return;
+            }
+            const key = messageContentKey(payload.sender, payload.text);
+            if (historyContentKeys.has(key)) return;
+            historyContentKeys.add(key);
             const msgId = renderMessage(payload.sender, payload.text);
-            // If someone else sent a message, mark our last own message as read by them
             if (myDisplayName && payload.sender !== myDisplayName && lastOwnMsgId) {
                 markRead(lastOwnMsgId, payload.sender);
             }
@@ -462,10 +508,13 @@
         }
     };
 
-    ws.onclose = () => {
-        wsStatus.textContent = 'Disconnected';
+    ws.onclose = (ev) => {
+        wsStatus.textContent = ev.code === 4004 ? 'Chat ended' : 'Disconnected';
         statusDot.style.background = '#e74c3c';
         clearInterval(heartbeatInterval);
+        if (ev.code === 4004 && ev.reason) {
+            alert(ev.reason);
+        }
     };
 
     // Heartbeat: send a ping every 30s to prevent proxy/browser idle disconnect

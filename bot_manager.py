@@ -10,27 +10,77 @@ from openai import AsyncOpenAI
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from human_defaults import (
+    DEEPSEEK_BASE_URL,
+    DEEPSEEK_CHAT_MODELS,
+    GPT_CHAT_MODELS,
+    HUMAN_LIKE_PROMPT,
+    default_chat_model,
+    default_llm_provider,
+    normalize_gpt_chat_model,
+    provider_for_model,
+)
 
-from human_defaults import HUMAN_LIKE_PROMPT, GPT_CHAT_MODELS, normalize_gpt_chat_model
+_openai_client: Optional[AsyncOpenAI] = None
+_deepseek_client: Optional[AsyncOpenAI] = None
 
-DEFAULT_AUX_MODEL = (os.getenv("OPENAI_AUX_MODEL") or "gpt-5-mini").strip() or "gpt-5-mini"
+
+def log_llm_providers() -> None:
+    ds = bool((os.getenv("DEEPSEEK_API_KEY") or "").strip())
+    oa = bool((os.getenv("OPENAI_API_KEY") or "").strip())
+    default = default_llm_provider()
+    print(
+        f"🤖 LLM default: {default} | DeepSeek={'on' if ds else 'off'} | "
+        f"OpenAI={'on' if oa else 'off'} | per-model routing (gpt-* / deepseek-*)"
+    )
+
+
+def get_llm_client_for_model(model: str) -> AsyncOpenAI:
+    """OpenAI SDK client for the provider implied by model id."""
+    global _openai_client, _deepseek_client
+    if provider_for_model(model) == "openai":
+        if _openai_client is None:
+            key = (os.getenv("OPENAI_API_KEY") or "").strip()
+            if not key:
+                raise RuntimeError(
+                    "OPENAI_API_KEY is missing in .env (this call uses a GPT model)"
+                )
+            _openai_client = AsyncOpenAI(api_key=key)
+        return _openai_client
+    if _deepseek_client is None:
+        key = (os.getenv("DEEPSEEK_API_KEY") or "").strip()
+        if not key:
+            raise RuntimeError("DEEPSEEK_API_KEY is missing in .env")
+        _deepseek_client = AsyncOpenAI(
+            api_key=key,
+            base_url=os.getenv("DEEPSEEK_BASE_URL", DEEPSEEK_BASE_URL),
+        )
+    return _deepseek_client
+
+
+def get_llm_client() -> AsyncOpenAI:
+    """Client for the configured default provider / model."""
+    return get_llm_client_for_model(default_chat_model())
 
 
 def resolve_chat_model(bot_cfg: Optional[dict] = None) -> str:
-    """Per-persona GPT model (Admin whitelist), else env OPENAI_CHAT_MODEL, else gpt-5."""
+    """Per-persona model (Admin whitelist), else env default for active provider."""
     if bot_cfg:
         return normalize_gpt_chat_model(bot_cfg.get("model"))
-    env = (os.getenv("OPENAI_CHAT_MODEL") or "").strip()
-    if env in GPT_CHAT_MODELS:
-        return env
-    return normalize_gpt_chat_model(None)
+    return default_chat_model()
 
 
 def resolve_aux_model() -> str:
     """Orchestrator / scoring calls (lighter default)."""
-    return DEFAULT_AUX_MODEL
+    ds = (os.getenv("DEEPSEEK_AUX_MODEL") or "").strip()
+    if ds in DEEPSEEK_CHAT_MODELS:
+        return ds
+    oa = (os.getenv("OPENAI_AUX_MODEL") or "").strip()
+    if oa in GPT_CHAT_MODELS:
+        return oa
+    if default_llm_provider() == "openai":
+        return "gpt-5-mini"
+    return "deepseek-chat"
 
 # Default system prompt when no specific instructions are provided
 DEFAULT_SYSTEM_PROMPT = HUMAN_LIKE_PROMPT
@@ -59,8 +109,23 @@ async def create_chat_completion(
     messages: List[Dict],
     cap_tokens: int,
     temperature: float = 0.7,
+    session_id: Optional[str] = None,
+    group_id: Optional[str] = None,
+    call_type: str = "chat",
 ) -> str:
-    """OpenAI chat completion with model-specific token param names."""
+    """OpenAI chat completion with model-specific token param names and usage tracking."""
+    from usage_tracker import (
+        SpendCapExceeded,
+        check_can_spend,
+        record_usage,
+        usage_from_completion,
+    )
+
+    if group_id and session_id:
+        allowed, reason = check_can_spend(session_id, group_id)
+        if not allowed:
+            raise SpendCapExceeded(reason)
+
     kwargs: Dict = {
         "model": model,
         "messages": messages,
@@ -70,10 +135,23 @@ async def create_chat_completion(
         kwargs["max_completion_tokens"] = cap_tokens
     else:
         kwargs["max_tokens"] = cap_tokens
-        kwargs["frequency_penalty"] = 0.35
-        kwargs["presence_penalty"] = 0.2
-    response = await client.chat.completions.create(**kwargs)
-    return response.choices[0].message.content.strip()
+        if not model.startswith("deepseek"):
+            kwargs["frequency_penalty"] = 0.35
+            kwargs["presence_penalty"] = 0.2
+    response = await get_llm_client_for_model(model).chat.completions.create(**kwargs)
+    text = response.choices[0].message.content.strip()
+
+    if group_id and session_id:
+        prompt_t, completion_t = usage_from_completion(response, messages)
+        record_usage(
+            session_id=session_id,
+            group_id=group_id,
+            model=model,
+            prompt_tokens=prompt_t,
+            completion_tokens=completion_t,
+            call_type=call_type,
+        )
+    return text
 
 # Short fallbacks when the AI API is unavailable
 
@@ -248,6 +326,7 @@ class ChatBot:
         mention_target: Optional[str] = None,
         emoji_enabled: bool = False,
         model: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Optional[str]:
         """
         Generates a response using the full room history provided by the ContextManager.
@@ -296,6 +375,9 @@ class ChatBot:
                 messages=messages,
                 cap_tokens=cap_tokens,
                 temperature=temperature,
+                session_id=session_id,
+                group_id=self.room_id,
+                call_type="bot_reply",
             )
             # Length target is prompt-only; max_words is a loose safety ceiling if the model runs long.
             reply = sanitize_bot_reply(
@@ -303,6 +385,11 @@ class ChatBot:
             )
             return reply
         except Exception as e:
+            from usage_tracker import SpendCapExceeded
+
+            if isinstance(e, SpendCapExceeded):
+                print(f"🛑 Bot {self.name} skipped: {e}")
+                return None
             print(f"❌ Generation Error: {e} — using fallback reply")
             return random.choice(FALLBACK_REPLIES)
     def update_persona(self, new_prompt: str):
@@ -322,7 +409,13 @@ class ChatBot:
 room_bot_registry: Dict[str, Dict[str, ChatBot]] = {}
 # Add this to your bot_manager.py
 
-async def analyze_intent(user_text: str, bots_config: list, history_text: str) -> Optional[str]:
+async def analyze_intent(
+    user_text: str,
+    bots_config: list,
+    history_text: str,
+    session_id: Optional[str] = None,
+    group_id: Optional[str] = None,
+) -> Optional[str]:
     """
     Decides which bot should speak based on the current message AND recent history.
     """
@@ -357,6 +450,9 @@ async def analyze_intent(user_text: str, bots_config: list, history_text: str) -
                 messages=[{"role": "system", "content": orchestrator_prompt}],
                 cap_tokens=10,
                 temperature=0,
+                session_id=session_id,
+                group_id=group_id,
+                call_type="intent_router",
             )
         ).replace("@", "")
         # Robust name matching
@@ -368,6 +464,16 @@ async def analyze_intent(user_text: str, bots_config: list, history_text: str) -
         return None
 
 
+def persona_mode4_reply_threshold(bot_cfg: dict) -> float:
+    """Persona mode 4: reply when assess_reply_probability >= this (default 0.5)."""
+    return max(0.0, min(1.0, float(bot_cfg.get("mode_4_threshold", 0.5))))
+
+
+def persona_mode4_should_reply(bot_cfg: dict, reply_p: float) -> bool:
+    """Persona mode 4: use model score directly — no second random roll."""
+    return reply_p >= persona_mode4_reply_threshold(bot_cfg)
+
+
 async def assess_reply_probability(
     bot_name: str,
     bot_prompt: str,
@@ -375,10 +481,12 @@ async def assess_reply_probability(
     user_text: str,
     history_summary: str,
     peer_names: Optional[List[str]] = None,
+    session_id: Optional[str] = None,
+    group_id: Optional[str] = None,
 ) -> float:
     """
-    Mode 4: estimate P(reply) from context (0–1). Caller still uses Bernoulli draw so
-    identical situations are not 100% deterministic.
+    Persona mode 4: estimate P(reply) from context (0–1).
+    Compared to mode_4_threshold on the persona card (default 0.5).
     """
     peers = ", ".join(peer_names) if peer_names else "others"
     orchestrator_prompt = f"""You judge whether "{bot_name}" would naturally send a message in a group chat RIGHT NOW.
@@ -407,6 +515,9 @@ Output ONLY one number from 0 to 1 (examples: 0, 0.25, 0.6, 1). No other text.""
             messages=[{"role": "system", "content": orchestrator_prompt}],
             cap_tokens=12,
             temperature=0.2,
+            session_id=session_id,
+            group_id=group_id,
+            call_type="reply_probability",
         )
         match = re.search(r"0?\.\d+|1\.0*|1|0", text)
         if match:
@@ -420,6 +531,7 @@ async def build_style_mimic_hint(
     room_id: str,
     target_name: str,
     speaker_bot_name: str,
+    session_id: Optional[str] = None,
 ) -> str:
     """
     Build instructions so speaker_bot_name mimics target_name's length/tone from room history.
@@ -463,6 +575,9 @@ async def build_style_mimic_hint(
                 ],
                 cap_tokens=90,
                 temperature=0.2,
+                session_id=session_id,
+                group_id=room_id,
+                call_type="style_mimic",
             )
         ).replace("\n", " ")
     except Exception as e:
@@ -519,47 +634,9 @@ def get_or_create_bot(
 
     return room_bots[bot_name]
 
-def get_bot(room_id: str, bot_name: str) -> Optional[ChatBot]:
-    """Retrieve a bot by name from a specific room."""
-    return room_bot_registry.get(room_id, {}).get(bot_name)
 
 def remove_room_bots(room_id: str):
     """Clean up all bot personas when a room is closed."""
     if room_id in room_bot_registry:
         del room_bot_registry[room_id]
         print(f"🗑️ Cleaned up all bot personas for room {room_id}")
-
-def remove_bot_persona(room_id: str, bot_name: str):
-    """Remove a specific persona from a room."""
-    if room_id in room_bot_registry and bot_name in room_bot_registry[room_id]:
-        del room_bot_registry[room_id][bot_name]
-        print(f"🗑️ Persona '{bot_name}' removed from room {room_id}")
-
-def clear_all_registries():
-    """Clear everything (System Reset)."""
-    room_bot_registry.clear()
-    print("🗑️ Global Bot Registry reset.")
-
-def get_active_bots_in_room(room_id: str) -> List[str]:
-    """List all bots currently 'awake' in a room."""
-    return list(room_bot_registry.get(room_id, {}).keys())
-
-# ==========================================
-# TEST AND VERIFICATION
-# ==========================================
-
-if __name__ == "__main__":
-    print("✅ bot_manager.py module loaded successfully")
-    
-    # Simple Local Test
-    async def test():
-        print("\n🧪 Testing Persona Sensing...")
-        b1 = get_or_create_bot("room_test", "Jarvis", "You are a polite butler.")
-        b2 = get_or_create_bot("room_test", "Harley", "You are a chaotic prankster.")
-        
-        print(f"Room active bots: {get_active_bots_in_room('room_test')}")
-        
-        resp = await b1.generate_response("User1", "Help me with my schedule.")
-        print(f"Jarvis Response: {resp}")
-        
-    # asyncio.run(test()) # Uncomment to run manual test

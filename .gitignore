@@ -6,16 +6,23 @@ venv/
 ENV/
 
 # Python
+/main
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
 
+# Researcher accounts (password hashes)
+config/accounts.json
+
 # Databases & Local Data
 *.db
 *.sqlite3
-config/admin_config.json
 config/participant_index.json
+config/usage_alert_state.json
+config/usage_ledger.jsonl
+config/usage_rollups.json
+config/chat_logs/
 db/local_db.json
 
 # Runtime logs & activity

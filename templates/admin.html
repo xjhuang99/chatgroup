@@ -147,6 +147,7 @@
     <nav class="nav-links">
         <a href="/">Dashboard</a>
         <a href="/admin" class="active">Admin</a>
+        <a href="/admin/accounts" id="navResearchers" style="display:none;">Researchers</a>
         <a href="/manual">Manual</a>
     </nav>
 </header>
@@ -176,18 +177,26 @@
                 </div>
             </div>
 
-            <!-- Row 2: Group size, session mode -->
+            <!-- Row 2: Human matching bounds, session mode -->
             <div class="grid-2">
                 <div class="form-group">
-                    <label>Group Size</label>
-                    <input type="number" id="groupSize" value="1" min="1" max="20">
+                    <label>Min humans / group</label>
+                    <input type="number" id="minHumans" value="1" min="1" max="20" title="Start chat when this many humans share a forming group">
                 </div>
                 <div class="form-group">
+                    <label>Max humans / group</label>
+                    <input type="number" id="maxHumans" value="1" min="1" max="20" title="When a forming group is full, the next participant joins another group">
+                </div>
+            </div>
+            <p class="text-sm text-muted" style="margin:-8px 0 12px;">Min = max → <strong>fixed</strong> group size. Min &lt; max → start at min; up to max per room; overflow goes to the next forming group.</p>
+            <div class="grid-2">
+                <div class="form-group">
                     <label>Session mode</label>
-                    <select id="sessionMode">
+                    <select id="sessionMode" onchange="syncSessionMode4UI()">
                         <option value="1" selected>Mode 1 — all bots reply</option>
                         <option value="2">Mode 2 — one bot per message</option>
                         <option value="3">Mode 3 — @mention only</option>
+                        <option value="4">Mode 4 — parallel + refresh on peer</option>
                     </select>
                 </div>
             </div>
@@ -260,6 +269,13 @@
                         <option value="false">Off — export from Dashboard</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Qualtrics log content</label>
+                    <select id="qualtricsLogMode">
+                        <option value="transcript" selected>Transcript — chat lines only</option>
+                        <option value="full">Full research log — prompts + decisions</option>
+                    </select>
+                </div>
             </div>
 
             <!-- ===== AI PERSONAS ===== -->
@@ -269,6 +285,20 @@
                     <button type="button" class="btn btn-primary" onclick="applyExamplePreset()" title="Fill form with recommended example settings">★ Example</button>
                     <button type="button" class="btn" onclick="syncAllPrompts()">↻ Sync prompt to all</button>
                     <button type="button" class="btn btn-success" onclick="addBotUI()">+ Add Persona</button>
+                </div>
+            </div>
+            <div class="grid-2" style="margin-bottom:16px;" id="sessionMode4Group">
+                <div class="form-group">
+                    <label>Parallel start jitter (sec)</label>
+                    <input type="number" id="parallelStartJitter" value="1.5" min="0" max="30" step="0.1" title="Mode 4: random 0–N sec stagger per bot">
+                </div>
+                <div class="form-group">
+                    <label>Rethink after peer (sec)</label>
+                    <input type="number" id="rethinkSeconds" value="2" min="0" max="30" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Max refresh attempts</label>
+                    <input type="number" id="maxRefreshAttempts" value="2" min="1" max="10">
                 </div>
             </div>
             <div class="grid-2" style="margin-bottom:16px;">
@@ -281,7 +311,26 @@
                 </div>
                 <div class="form-group">
                     <label>Max chain depth</label>
-                    <input type="number" id="maxChainDepth" value="10" min="1" max="10" title="Bot-to-bot follow-up rounds after one trigger message">
+                    <input type="number" id="maxChainDepth" value="2" min="1" max="10" title="Bot-to-bot follow-up rounds after one trigger message">
+                </div>
+                <div class="form-group">
+                    <label>API cap / group (USD)</label>
+                    <input type="number" id="groupSpendCap" min="0.5" step="0.5" title="Max estimated API spend per chat group">
+                </div>
+                <div class="form-group">
+                    <label>Use @mentions</label>
+                    <select id="useMentions" onchange="syncMentionsUI()">
+                        <option value="false" selected>Off</option>
+                        <option value="true">On — bots may @name in replies</option>
+                    </select>
+                </div>
+                <div class="form-group" id="mentionProbGroup" style="display:none;">
+                    <label>Mention probability</label>
+                    <input type="number" id="mentionProb" value="0.35" min="0" max="1" step="0.05" title="Chance a bot adds @name when replying">
+                </div>
+                <div class="form-group">
+                    <label>Self-correction prob.</label>
+                    <input type="number" id="selfCorrectionProb" value="0" min="0" max="1" step="0.05" title="Chance bot sends a follow-up correction line">
                 </div>
             </div>
 
@@ -322,22 +371,29 @@ function toast(msg, color = '#2ecc71') {
    ============================================================ */
 let botPersonas = [];
 
-/** Keep in sync with human_defaults.py GPT_CHAT_MODELS */
+/** Keep in sync with human_defaults.py */
 const GPT_CHAT_MODELS = [
     { id: 'gpt-5.5', label: 'GPT-5.5 — strongest' },
     { id: 'gpt-5', label: 'GPT-5 — recommended' },
     { id: 'gpt-4o', label: 'GPT-4o — strong & stable' },
 ];
+const DEEPSEEK_CHAT_MODELS = [
+    { id: 'deepseek-chat', label: 'DeepSeek Chat' },
+    { id: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
+];
+const CHAT_MODELS = [...DEEPSEEK_CHAT_MODELS, ...GPT_CHAT_MODELS];
 const DEFAULT_GPT_CHAT_MODEL = 'gpt-5';
+const DEFAULT_DEEPSEEK_CHAT_MODEL = 'deepseek-chat';
+const DEFAULT_CHAT_MODEL = DEFAULT_DEEPSEEK_CHAT_MODEL;
 
 function normalizeGptModel(value) {
     const m = (value || '').trim();
-    return GPT_CHAT_MODELS.some(x => x.id === m) ? m : DEFAULT_GPT_CHAT_MODEL;
+    return CHAT_MODELS.some(x => x.id === m) ? m : DEFAULT_CHAT_MODEL;
 }
 
 function gptModelSelectHtml(selected, index) {
     const cur = normalizeGptModel(selected);
-    const opts = GPT_CHAT_MODELS.map(
+    const opts = CHAT_MODELS.map(
         x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${x.label}</option>`
     ).join('');
     return `<select onchange="updateBot(${index}, 'model', this.value)">${opts}</select>`;
@@ -365,15 +421,23 @@ const EXAMPLE_CONDITION_HELP =
     '(one shared queue; no “may use AI” tag). Disclosure study (personas a, b): cond1_a | cond1_b | cond2/control | ' +
     'cond1 (random tag on a or b). Same string → same match queue. See Manual.';
 
+function defaultGroupCapUsd() {
+    return window.__envDefaults?.group_spend_cap_usd ?? 8;
+}
+
 const HUMAN_LIKE_PRESET = {
     sessionMode: 1,
     botReplyOnAny: true,
-    maxChainDepth: 10,
+    maxChainDepth: 2,
+    get groupSpendCap() { return defaultGroupCapUsd(); },
+    useMentions: false,
+    mentionProb: 0.35,
+    selfCorrectionProb: 0,
     aiStartsConversation: true,
     styleMimicEnabled: false,
     turnMode: 'none',
     bot: {
-        model: DEFAULT_GPT_CHAT_MODEL,
+        model: DEFAULT_DEEPSEEK_CHAT_MODEL,
         mode: 3,
         delay_seconds: 5,
         typing_cps: 2,
@@ -414,13 +478,18 @@ function applyExamplePreset() {
     document.getElementById('sessionMode').value = String(p.sessionMode);
     document.getElementById('botReplyOnAny').value = p.botReplyOnAny ? 'true' : 'false';
     document.getElementById('maxChainDepth').value = p.maxChainDepth;
+    document.getElementById('groupSpendCap').value = p.groupSpendCap;
+    document.getElementById('useMentions').value = p.useMentions ? 'true' : 'false';
+    document.getElementById('mentionProb').value = p.mentionProb;
+    document.getElementById('selfCorrectionProb').value = p.selfCorrectionProb;
+    syncMentionsUI();
     document.getElementById('aiStartsConversation').value = p.aiStartsConversation ? 'true' : 'false';
     document.getElementById('styleMimicEnabled').value = p.styleMimicEnabled ? 'true' : 'false';
     document.getElementById('turnMode').value = p.turnMode;
     syncTurnDurationUI();
     botPersonas = [
-        defaultBotTemplate({ name: 'a', model: DEFAULT_GPT_CHAT_MODEL, temperature: 0.65 }),
-        defaultBotTemplate({ name: 'b', model: DEFAULT_GPT_CHAT_MODEL, temperature: 0.9 }),
+        defaultBotTemplate({ name: 'a', model: DEFAULT_DEEPSEEK_CHAT_MODEL, temperature: 0.65 }),
+        defaultBotTemplate({ name: 'b', model: DEFAULT_DEEPSEEK_CHAT_MODEL, temperature: 0.9 }),
     ];
     renderBots();
     toast('Example settings applied');
@@ -635,7 +704,9 @@ document.getElementById('newSessionForm').onsubmit = async (e) => {
 
     const payload = {
         session_name:     document.getElementById('sessionName').value,
-        group_size:       parseInt(document.getElementById('groupSize').value),
+        min_humans_per_group: parseInt(document.getElementById('minHumans').value, 10),
+        max_humans_per_group: parseInt(document.getElementById('maxHumans').value, 10),
+        group_size:       parseInt(document.getElementById('maxHumans').value, 10),
         bot_enabled:      document.getElementById('botEnabled').value === 'true',
         survey_open_days: parseInt(document.getElementById('surveyOpenDays').value, 10),
         group_chat_duration_minutes: parseInt(document.getElementById('groupChatDuration').value, 10),
@@ -649,12 +720,22 @@ document.getElementById('newSessionForm').onsubmit = async (e) => {
         ai_starts_conversation: document.getElementById('aiStartsConversation').value === 'true',
         qualtrics_handoff_enabled: document.getElementById('qualtricsIntegration').value === 'true',
         qualtrics_store_chat: document.getElementById('qualtricsIntegration').value === 'true',
+        qualtrics_log_mode: document.getElementById('qualtricsLogMode').value,
         qualtrics_field_transcript: 'transcript',
         qualtrics_field_status: 'chat_status',
         style_mimic_enabled: document.getElementById('styleMimicEnabled').value === 'true',
         style_mimic_target: document.getElementById('styleMimicTarget').value.trim() || 'c',
         bot_reply_on_any_message: document.getElementById('botReplyOnAny').value === 'true',
         max_chain_depth: parseInt(document.getElementById('maxChainDepth').value, 10),
+        group_spend_cap_usd: parseFloat(document.getElementById('groupSpendCap').value) || defaultGroupCapUsd(),
+        use_mentions: document.getElementById('useMentions').value === 'true',
+        mention_prob: document.getElementById('useMentions').value === 'true'
+            ? (parseFloat(document.getElementById('mentionProb').value) || 0)
+            : 0,
+        self_correction_prob: parseFloat(document.getElementById('selfCorrectionProb').value) || 0,
+        parallel_start_jitter_sec: parseFloat(document.getElementById('parallelStartJitter').value) || 0,
+        rethink_seconds: parseFloat(document.getElementById('rethinkSeconds').value) || 2,
+        max_refresh_attempts: parseInt(document.getElementById('maxRefreshAttempts').value, 10) || 2,
         participant_names: document.getElementById('participantNames').value
             ? document.getElementById('participantNames').value.split(',').map(s => s.trim()).filter(Boolean)
             : null,
@@ -665,6 +746,7 @@ document.getElementById('newSessionForm').onsubmit = async (e) => {
         const res = await fetch('/api/sessions/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -679,6 +761,12 @@ document.getElementById('newSessionForm').onsubmit = async (e) => {
         toast('Network error: ' + err.message, '#e74c3c');
     }
 };
+
+function syncSessionMode4UI() {
+    const is4 = document.getElementById('sessionMode')?.value === '4';
+    const group = document.getElementById('sessionMode4Group');
+    if (group) group.style.opacity = is4 ? '1' : '0.45';
+}
 
 function syncConditionAssignmentUI() {
     const condOn = document.getElementById('conditionEnabled').value === 'true';
@@ -696,6 +784,12 @@ function syncTurnDurationUI() {
     const turnDurationGroup = document.getElementById('turnDurationGroup');
     if (!turnDurationGroup) return;
     turnDurationGroup.style.display = turnMode === 'timed' ? '' : 'none';
+}
+
+function syncMentionsUI() {
+    const on = document.getElementById('useMentions')?.value === 'true';
+    const group = document.getElementById('mentionProbGroup');
+    if (group) group.style.display = on ? '' : 'none';
 }
 
 /** Qualtrics Embedded Data + server settings reference for researchers */
@@ -716,15 +810,24 @@ function buildQualtricsFieldTable(sessionId, payload) {
             conditionOn
                 ? EXAMPLE_CONDITION_HELP + ' URL: ${e://Field/condition}.'
                 : 'Optional when Condition Off; used only if you still pass it in the URL.'],
-        [transcriptField, qOn ? 'Out (saved on end)' : 'N/A', 'Chat app', qOn ? 'Yes' : 'No', 'Full group transcript (capped ~240k characters)'],
+        [transcriptField, qOn ? 'Out (saved on end)' : 'N/A', 'Chat app', qOn ? 'Yes' : 'No',
+            (payload.qualtrics_log_mode === 'full'
+                ? 'Full research log: prompts, persona mode 4 scores, mode 4 refresh notes, then chat lines (~240k cap)'
+                : 'Transcript only: chat lines + export notes (e.g. mode4 refresh), no prompts (~240k cap)')],
+        ['qualtrics_log_mode', 'Server', 'Admin', '—', (payload.qualtrics_log_mode || 'transcript') + ' — what is written to the transcript Embedded Data field'],
         [statusField, qOn ? 'Out (saved on end)' : 'N/A', 'Chat app', qOn ? 'Yes' : 'No', 'completed_full | left_early | no_messages | never_joined'],
         ['—', '—', '—', '—', 'Server settings (Admin at create; documented for IRB / analysis plans):'],
-        ['group_size', 'Server', 'Admin', '—', String(payload.group_size ?? '') + ' humans matched per group (bots are extra)'],
+        ['min_humans_per_group', 'Server', 'Admin', '—', String(payload.min_humans_per_group ?? '') + ' — minimum humans before a group chat starts'],
+        ['max_humans_per_group', 'Server', 'Admin', '—', String(payload.max_humans_per_group ?? '') + ' — maximum humans per group; next joiner starts another forming group'],
+        ['group_size', 'Server', 'Admin', '—', 'Legacy alias of max humans (bots are extra)'],
         ['group_chat_duration_minutes', 'Server', 'Admin', '—', String(payload.group_chat_duration_minutes ?? 3) + ' minutes per group from match time'],
         ['survey_open_days', 'Server', 'Admin', '—', String(payload.survey_open_days ?? 7) + ' days new participants can join the queue'],
         ['session_mode', 'Server', 'Admin', '—', '1 = all bots | 2 = one bot per message | 3 = @mention only. This session: ' + (payload.session_mode ?? 1)],
         ['bot_reply_on_any_message', 'Server', 'Admin', '—', String(payload.bot_reply_on_any_message === true) + ' — if true, bot messages can trigger other bots (with chain limits)'],
-        ['max_chain_depth', 'Server', 'Admin', '—', String(payload.max_chain_depth ?? 10) + ' — bot-to-bot follow-up rounds after one trigger message'],
+        ['max_chain_depth', 'Server', 'Admin', '—', String(payload.max_chain_depth ?? 2) + ' — bot-to-bot follow-up rounds after one trigger message'],
+        ['group_spend_cap_usd', 'Server', 'Admin', '—', '$' + (payload.group_spend_cap_usd ?? defaultGroupCapUsd()) + ' max estimated API spend per group'],
+        ['use_mentions', 'Server', 'Admin', '—', String(payload.use_mentions === true) + (payload.use_mentions ? ' (mention_prob ' + (payload.mention_prob ?? 0) + ')' : '')],
+        ['self_correction_prob', 'Server', 'Admin', '—', String(payload.self_correction_prob ?? 0)],
         ['bot_enabled', 'Server', 'Admin', '—', String(payload.bot_enabled !== false)],
         ['participant_names', 'Server', 'Admin', '—', (payload.participant_names || []).join(', ') || '(auto participant IDs)'],
         ['assignment_mode', 'Server', 'Admin', '—', conditionOn ? 'stratified (forced when Condition On)' : (payload.assignment_mode || 'fifo')],
@@ -810,10 +913,36 @@ function copyText(elementId) {
     });
 }
 
-// Init
-syncConditionAssignmentUI();
-syncTurnDurationUI();
-loadDefaultPersonas();
+async function syncSuperAdminNav() {
+    try {
+        const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        const d = await r.json();
+        if (d.authenticated && d.type === 'admin') {
+            const el = document.getElementById('navResearchers');
+            if (el) el.style.display = '';
+        }
+    } catch (_) {}
+}
+
+async function loadEnvDefaults() {
+    try {
+        const r = await fetch('/api/admin/human-defaults', { credentials: 'same-origin' });
+        if (!r.ok) return;
+        const d = await r.json();
+        window.__envDefaults = d.env_defaults || {};
+        const el = document.getElementById('groupSpendCap');
+        if (el) el.value = defaultGroupCapUsd();
+    } catch (_) { /* ignore */ }
+}
+
+(async function init() {
+    await loadEnvDefaults();
+    syncConditionAssignmentUI();
+    syncTurnDurationUI();
+    syncMentionsUI();
+    syncSuperAdminNav();
+    loadDefaultPersonas();
+})();
 </script>
 </body>
 </html>

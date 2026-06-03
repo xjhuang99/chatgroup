@@ -302,6 +302,8 @@
         }
         .btn-row:hover { background: var(--gray-300); }
         .btn-row.danger { color: #b42318; background: #fef2f2; }
+        .btn-row.warn { color: #b45309; background: #fffbeb; }
+        .room-paused { color: #b45309; font-size: var(--fs-sm); font-weight: 700; }
 
         .chat-monitor-layout {
             display: grid;
@@ -424,6 +426,8 @@
     <nav class="nav-links">
         <a href="/" class="active">Dashboard</a>
         <a href="/admin">Admin</a>
+        <a href="/admin/accounts" id="navResearchers" style="display:none;">Researchers</a>
+        <a href="/account" id="navAccount" style="display:none;">Account</a>
         <a href="/manual">Manual</a>
     </nav>
 </header>
@@ -444,6 +448,9 @@
             <div class="metric" title="On if at least one published session has AI bots enabled in Admin (Enable AI Bots = Yes). Off if no sessions or all are human-only.">
                 <label>AI bots</label><span id="bot-status">—</span>
             </div>
+            <div class="metric" id="metricAccountBudget" style="display:none;"><label>Your API budget</label><span id="account-spend">—</span></div>
+            <div class="metric" id="metricGlobalSpend"><label>API spend (all)</label><span id="total-spend">$0</span></div>
+            <div class="metric" id="metricHourSpend"><label>This hour</label><span id="hour-spend">$0</span></div>
         </div>
 
         <div class="card">
@@ -451,6 +458,7 @@
                 <button type="button" class="tab-btn active" id="btn-sessions" onclick="switchTab('sessions')">Sessions</button>
                 <button type="button" class="tab-btn" id="btn-rooms" onclick="switchTab('rooms')">Monitor</button>
                 <button type="button" class="tab-btn" id="btn-export" onclick="switchTab('export')">Export</button>
+                <button type="button" class="tab-btn" id="btn-usage" onclick="switchTab('usage')">Usage &amp; cost</button>
             </div>
 
             <div id="sessions-tab" class="tab-content active">
@@ -473,7 +481,7 @@
                 <table class="rooms-table">
                     <thead>
                         <tr>
-                            <th>Room</th><th>Session</th><th>People</th><th>Bots</th><th>Msgs</th><th></th>
+                            <th>Room</th><th>Session</th><th>People</th><th>Bots</th><th>Msgs</th><th>API $</th><th>Status</th><th></th>
                         </tr>
                     </thead>
                     <tbody id="rooms-body"></tbody>
@@ -492,6 +500,14 @@
                 <div class="export-grid" id="export-sessions-list"><p class="empty-state">Loading…</p></div>
                 <p class="section-title">Chat history</p>
                 <div class="export-grid" id="export-rooms-list"><p class="empty-state">Loading…</p></div>
+            </div>
+
+            <div id="usage-tab" class="tab-content">
+                <p class="text-sm text-muted">Estimated API cost (DeepSeek/GPT; rates ~10% above list). Per group cap: <span id="usage-default-cap">—</span> USD; per registered researcher: $<span id="usage-default-account-cap">—</span> total (<code>ACCOUNT_SPEND_CAP_USD</code>). See Manual → Usage &amp; cost.</p>
+                <p class="section-title">Top sessions by spend</p>
+                <div id="usage-sessions-table"><p class="empty-state">Loading…</p></div>
+                <p class="section-title">Top groups by spend</p>
+                <div id="usage-groups-table"><p class="empty-state">Loading…</p></div>
             </div>
         </div>
     </div>
@@ -513,13 +529,53 @@ function toast(msg) {
     setTimeout(() => { el.style.display = 'none'; }, 3200);
 }
 
+function defaultGroupCapUsd() {
+    const u = window.__usageCache || {};
+    return u.default_group_cap_usd ?? u.env_defaults?.group_spend_cap_usd ?? 8;
+}
+function defaultAccountCapUsd() {
+    const u = window.__usageCache || {};
+    return u.default_account_cap_usd ?? u.env_defaults?.account_spend_cap_usd ?? 200;
+}
+
 function isAdminLoggedIn() {
-    return document.cookie.includes('actr_auth=authenticated');
+    return sessionStorage.getItem('actr_admin') === '1';
+}
+
+function isSuperAdmin() {
+    return window.__authPrincipal?.type === 'admin';
+}
+
+async function syncAdminSession() {
+    try {
+        const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!r.ok) return;
+        const d = await r.json();
+        window.__authPrincipal = d.authenticated ? d : null;
+        if (d.authenticated) sessionStorage.setItem('actr_admin', '1');
+        else sessionStorage.removeItem('actr_admin');
+        const navAcct = document.getElementById('navAccount');
+        const bud = document.getElementById('metricAccountBudget');
+        const acctSpend = document.getElementById('account-spend');
+        if (d.type === 'admin') {
+            const navRes = document.getElementById('navResearchers');
+            if (navRes) navRes.style.display = '';
+        }
+        if (d.type === 'account' && navAcct) {
+            navAcct.style.display = '';
+            if (bud) bud.style.display = '';
+            if (acctSpend) {
+                acctSpend.textContent = '$' + (d.spend_usd || 0).toFixed(2) + ' / $' + (d.spend_cap_usd || defaultAccountCapUsd());
+            }
+            document.getElementById('metricGlobalSpend')?.style.setProperty('display', 'none');
+            document.getElementById('metricHourSpend')?.style.setProperty('display', 'none');
+        }
+    } catch (_) { /* ignore */ }
 }
 
 function switchTab(t) {
     if (t === 'join' || t === 'published' || t === 'monitor') t = t === 'monitor' ? 'rooms' : 'sessions';
-    if (!['sessions', 'rooms', 'export'].includes(t)) t = 'sessions';
+    if (!['sessions', 'rooms', 'export', 'usage'].includes(t)) t = 'sessions';
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     const tabEl = document.getElementById(t + '-tab');
@@ -527,6 +583,7 @@ function switchTab(t) {
     if (tabEl) tabEl.classList.add('active');
     if (btnEl) btnEl.classList.add('active');
     if (t === 'export') renderExportTab();
+    if (t === 'usage') renderUsageTab();
     if (t === 'sessions') loadPublishedSessions();
     history.replaceState(null, '', t === 'sessions' ? '/' : `/?tab=${t}`);
 }
@@ -585,7 +642,7 @@ async function loadPublishedSessions() {
             <div class="session-row ${s.id === selectedSessionId ? 'active' : ''}" data-id="${s.id}" onclick="selectSession('${s.id}')">
                 <span class="${s.is_open ? 'badge-open' : 'badge-closed'}">${s.is_open ? 'Open' : 'Closed'}</span>
                 <div class="session-row-id">${s.name || 'Unnamed'}</div>
-                <div class="session-row-meta">${s.id} · ${s.group_size}/group</div>
+                <div class="session-row-meta">${s.id} · ${s.min_humans_per_group ?? s.group_size}–${s.max_humans_per_group ?? s.group_size} humans</div>
             </div>
         `).join('');
     } catch (e) {
@@ -621,38 +678,70 @@ async function selectSession(sessionId) {
                     <button type="button" class="btn-modify" id="btnUnlockModify">Edit</button>
                     <button type="button" class="btn-action btn-primary" id="btnConfirmModify" style="display:none;">Save</button>
                     <button type="button" class="btn-action btn-danger" id="btnCancelModify" style="display:none;">Cancel</button>
-                    ${isAdminLoggedIn() ? `<button type="button" class="btn-action btn-danger" id="btnDeleteSession">Delete</button>` : ''}
+                    ${isSuperAdmin() ? `<button type="button" class="btn-action btn-danger" id="btnDeleteSession">Delete</button>` : ''}
                 </div>
             </div>
             <form id="sessionDetailForm" class="readonly">
                 <div class="param-section-title">Basic</div>
                 <div class="grid-2">
                     <div class="form-group"><label>Name</label><input type="text" id="modSessionName" disabled></div>
-                    <div class="form-group"><label>Group size</label><input type="number" id="modGroupSize" min="1" max="20" disabled></div>
+                    <div class="form-group"><label>Min humans / group</label><input type="number" id="modMinHumans" min="1" max="20" disabled title="Start when this many humans are in the same forming group"></div>
+                    <div class="form-group"><label>Max humans / group</label><input type="number" id="modMaxHumans" min="1" max="20" disabled title="When full, next participant joins another forming group"></div>
+                    <div class="form-group"><label>History limit</label><input type="number" id="modHistoryLimit" min="100" max="50000" disabled title="Max messages kept in memory and returned on reload"></div>
                 </div>
+                <div class="form-group"><label>Participant names <span class="hint">(comma-separated, optional)</span></label><input type="text" id="modParticipantNames" placeholder="c,d" disabled></div>
                 <div class="param-section-title">Timing</div>
                 <div class="grid-2">
                     <div class="form-group"><label>Survey open (days)</label><input type="number" id="modSurveyOpenDays" min="1" max="90" disabled></div>
                     <div class="form-group"><label>Chat duration (min)</label><input type="number" id="modGroupChatDuration" min="1" max="180" disabled></div>
                 </div>
                 <div class="param-section-title">Experiment</div>
-                <div class="grid-3">
-                    <div class="form-group"><label>Session mode</label><select id="modSessionMode" disabled><option value="1">1 — all bots</option><option value="2">2 — one per msg</option><option value="3">3 — @mention</option></select></div>
-                    <div class="form-group"><label>Bots</label><select id="modBotEnabled" disabled><option value="true">On</option><option value="false">Off</option></select></div>
-                    <div class="form-group"><label>Assignment</label><select id="modAssignmentMode" disabled>${assignmentOptions}</select></div>
-                </div>
                 <div class="grid-2">
+                    <div class="form-group"><label>Session mode</label><select id="modSessionMode" disabled onchange="syncModMode4UI()"><option value="1">1 — all bots</option><option value="2">2 — one per msg</option><option value="3">3 — @mention</option><option value="4">4 — parallel + refresh</option></select></div>
+                    <div class="form-group"><label>AI bots</label><select id="modBotEnabled" disabled><option value="true">On</option><option value="false">Off</option></select></div>
+                    <div class="form-group"><label>Assignment</label><select id="modAssignmentMode" disabled>${assignmentOptions}</select></div>
                     <div class="form-group"><label>Condition</label><select id="modConditionEnabled" disabled><option value="true">On</option><option value="false">Off</option></select></div>
+                    <div class="form-group"><label>Turns</label><select id="modTurnMode" disabled><option value="none">Off</option><option value="round_robin">Round-robin</option><option value="timed">Timed</option></select></div>
+                    <div class="form-group" id="modTurnDurationGroup"><label>Turn duration (sec)</label><input type="number" id="modTurnDuration" min="10" max="600" disabled></div>
+                    <div class="form-group"><label>Style mimic</label><select id="modStyleMimicEnabled" disabled><option value="false">Off</option><option value="true">On</option></select></div>
+                    <div class="form-group"><label>Style target</label><input type="text" id="modStyleMimicTarget" placeholder="c" disabled></div>
+                    <div class="form-group"><label>AI opens chat</label><select id="modAiStartsConversation" disabled><option value="false">No</option><option value="true">Yes</option></select></div>
                     <div class="form-group"><label>Qualtrics</label><select id="modQualtricsIntegration" disabled><option value="false">Off</option><option value="true">On</option></select></div>
                 </div>
                 <div class="grid-2">
+                    <div class="form-group"><label>Qualtrics log content</label><select id="modQualtricsLogMode" disabled><option value="transcript">Transcript — chat lines only</option><option value="full">Full — prompts + decisions + notes</option></select></div>
+                    <div class="form-group"><label>Qualtrics transcript field</label><input type="text" id="modQualtricsTranscriptField" placeholder="transcript" disabled title="Embedded Data field name; content depends on log mode above"></div>
+                    <div class="form-group"><label>Qualtrics status field</label><input type="text" id="modQualtricsStatusField" placeholder="chat_status" disabled></div>
+                </div>
+                <div class="param-section-title">Mode 4 (parallel bots)</div>
+                <div class="grid-2" id="modMode4Group">
+                    <div class="form-group"><label>Start jitter (sec)</label><input type="number" id="modParallelJitter" min="0" max="30" step="0.1" disabled title="Random 0–N sec before each bot starts"></div>
+                    <div class="form-group"><label>Rethink (sec)</label><input type="number" id="modRethinkSeconds" min="0" max="30" step="0.1" disabled title="Pause after a peer posts before regenerating"></div>
+                    <div class="form-group"><label>Max refresh attempts</label><input type="number" id="modMaxRefreshAttempts" min="1" max="10" disabled></div>
+                </div>
+                <div class="param-section-title">Bot interaction</div>
+                <div class="grid-2">
                     <div class="form-group"><label>Reply on any msg</label><select id="modBotReplyOnAny" disabled><option value="false">Off</option><option value="true">On</option></select></div>
                     <div class="form-group"><label>Chain depth</label><input type="number" id="modMaxChainDepth" min="1" max="10" disabled></div>
+                    <div class="form-group"><label>API cap / group (USD)</label><input type="number" id="modGroupSpendCap" min="0.5" step="0.5" disabled title="Max estimated OpenAI spend per chat group"></div>
+                    <div class="form-group"><label>Use @mentions</label><select id="modUseMentions" disabled onchange="syncModMentionsUI()"><option value="false">Off</option><option value="true">On</option></select></div>
+                    <div class="form-group" id="modMentionProbGroup"><label>Mention probability</label><input type="number" id="modMentionProb" min="0" max="1" step="0.05" disabled></div>
+                    <div class="form-group"><label>Self-correction prob.</label><input type="number" id="modSelfCorrectionProb" min="0" max="1" step="0.05" disabled></div>
                 </div>
-                <div class="form-group"><label>Personas (JSON)</label><textarea id="modBotsJson" rows="5" disabled class="mono"></textarea></div>
+                <div class="param-section-title">Personas</div>
+                <div class="form-group"><label>Personas (JSON)</label><textarea id="modBotsJson" rows="8" disabled class="mono"></textarea></div>
             </form>
         `;
         fillSessionDetailForm(cfg);
+        document.getElementById('modConditionEnabled').onchange = syncModConditionAssignmentUI;
+        document.getElementById('modTurnMode').onchange = syncModTurnDurationUI;
+        document.getElementById('modUseMentions').onchange = syncModMentionsUI;
+        syncModConditionAssignmentUI();
+        syncModTurnDurationUI();
+        syncModMentionsUI();
+        syncModMode4UI();
+        const sm = document.getElementById('modSessionMode');
+        if (sm) sm.onchange = syncModMode4UI;
         setDetailEditMode(false);
         document.getElementById('btnUnlockModify').onclick = () => setDetailEditMode(true);
         document.getElementById('btnCancelModify').onclick = () => {
@@ -667,26 +756,84 @@ async function selectSession(sessionId) {
     }
 }
 
+function syncModConditionAssignmentUI() {
+    const condOn = document.getElementById('modConditionEnabled')?.value === 'true';
+    const assign = document.getElementById('modAssignmentMode');
+    if (!assign) return;
+    if (condOn) {
+        assign.value = 'stratified';
+        assign.disabled = true;
+    } else if (!document.getElementById('sessionDetailForm')?.classList.contains('readonly')) {
+        assign.disabled = false;
+    }
+}
+
+function syncModTurnDurationUI() {
+    const turnMode = document.getElementById('modTurnMode')?.value || 'none';
+    const group = document.getElementById('modTurnDurationGroup');
+    if (group) group.style.display = turnMode === 'timed' ? '' : 'none';
+}
+
+function syncModMentionsUI() {
+    const on = document.getElementById('modUseMentions')?.value === 'true';
+    const group = document.getElementById('modMentionProbGroup');
+    if (group) group.style.display = on ? '' : 'none';
+}
+
+function syncModMode4UI() {
+    const is4 = document.getElementById('modSessionMode')?.value === '4';
+    const group = document.getElementById('modMode4Group');
+    const editing = !document.getElementById('sessionDetailForm')?.classList.contains('readonly');
+    if (group) group.style.opacity = is4 ? '1' : '0.45';
+    ['modParallelJitter', 'modRethinkSeconds', 'modMaxRefreshAttempts'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!editing) {
+            el.disabled = true;
+            return;
+        }
+        el.disabled = !is4;
+    });
+}
+
 function fillSessionDetailForm(cfg) {
     document.getElementById('modSessionName').value = cfg.name || '';
-    document.getElementById('modGroupSize').value = cfg.group_size;
+    const minH = cfg.min_humans_per_group ?? cfg.group_size ?? 1;
+    const maxH = cfg.max_humans_per_group ?? cfg.group_size ?? 1;
+    document.getElementById('modMinHumans').value = minH;
+    document.getElementById('modMaxHumans').value = maxH;
+    document.getElementById('modHistoryLimit').value = cfg.history_limit ?? 10000;
+    document.getElementById('modParticipantNames').value = (cfg.participant_names || []).join(', ');
     document.getElementById('modSurveyOpenDays').value = cfg.survey_open_days ?? 7;
     document.getElementById('modGroupChatDuration').value = cfg.group_chat_duration_minutes ?? 3;
     document.getElementById('modSessionMode').value = String(cfg.session_mode ?? 1);
+    document.getElementById('modParallelJitter').value = cfg.parallel_start_jitter_sec ?? 1.5;
+    document.getElementById('modRethinkSeconds').value = cfg.rethink_seconds ?? 2;
+    document.getElementById('modMaxRefreshAttempts').value = cfg.max_refresh_attempts ?? 2;
+    syncModMode4UI();
     document.getElementById('modBotEnabled').value = cfg.bot_enabled ? 'true' : 'false';
     const condOn = cfg.condition_enabled !== false;
     document.getElementById('modConditionEnabled').value = condOn ? 'true' : 'false';
-    // When Condition is On, assignment is forced to stratified.
     document.getElementById('modAssignmentMode').value = condOn ? 'stratified' : (cfg.assignment_mode || 'fifo');
+    document.getElementById('modTurnMode').value = cfg.turn_mode || 'none';
+    document.getElementById('modTurnDuration').value = cfg.turn_duration_seconds ?? 60;
+    document.getElementById('modStyleMimicEnabled').value = cfg.style_mimic_enabled ? 'true' : 'false';
+    document.getElementById('modStyleMimicTarget').value = cfg.style_mimic_target || 'c';
+    document.getElementById('modAiStartsConversation').value = cfg.ai_starts_conversation ? 'true' : 'false';
     const qOn = cfg.qualtrics_handoff_enabled && cfg.qualtrics_store_chat;
     document.getElementById('modQualtricsIntegration').value = qOn ? 'true' : 'false';
+    document.getElementById('modQualtricsLogMode').value = cfg.qualtrics_log_mode || 'transcript';
+    document.getElementById('modQualtricsTranscriptField').value = cfg.qualtrics_field_transcript || 'transcript';
+    document.getElementById('modQualtricsStatusField').value = cfg.qualtrics_field_status || 'chat_status';
     document.getElementById('modBotsJson').value = JSON.stringify(cfg.bots || [], null, 2);
-    const setIf = (id, val, fallback) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val ?? fallback;
-    };
-    setIf('modBotReplyOnAny', cfg.bot_reply_on_any_message === true ? 'true' : 'false', 'true');
-    setIf('modMaxChainDepth', cfg.max_chain_depth, 10);
+    document.getElementById('modBotReplyOnAny').value = cfg.bot_reply_on_any_message === true ? 'true' : 'false';
+    document.getElementById('modMaxChainDepth').value = cfg.max_chain_depth ?? 2;
+    const capEl = document.getElementById('modGroupSpendCap');
+    if (capEl) capEl.value = cfg.group_spend_cap_usd ?? defaultGroupCapUsd();
+    document.getElementById('modUseMentions').value = cfg.use_mentions ? 'true' : 'false';
+    document.getElementById('modMentionProb').value = cfg.mention_prob ?? 0;
+    syncModMentionsUI();
+    document.getElementById('modSelfCorrectionProb').value = cfg.self_correction_prob ?? 0;
 }
 
 function setDetailEditMode(editing) {
@@ -694,6 +841,13 @@ function setDetailEditMode(editing) {
     if (!form) return;
     form.classList.toggle('readonly', !editing);
     form.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = !editing; });
+    if (editing) syncModConditionAssignmentUI();
+    else {
+        const assign = document.getElementById('modAssignmentMode');
+        if (assign) assign.disabled = true;
+    }
+    syncModTurnDurationUI();
+    syncModMode4UI();
     document.getElementById('btnUnlockModify').style.display = editing ? 'none' : 'inline-block';
     document.getElementById('btnConfirmModify').style.display = editing ? 'inline-block' : 'none';
     document.getElementById('btnCancelModify').style.display = editing ? 'inline-block' : 'none';
@@ -704,19 +858,42 @@ async function confirmModifySession() {
     let payload;
     try {
         const bots = JSON.parse(document.getElementById('modBotsJson').value || '[]');
+        const condOn = document.getElementById('modConditionEnabled').value === 'true';
+        const qualOn = document.getElementById('modQualtricsIntegration').value === 'true';
         payload = {
             session_name: document.getElementById('modSessionName').value,
-            group_size: parseInt(document.getElementById('modGroupSize').value, 10),
+            min_humans_per_group: parseInt(document.getElementById('modMinHumans').value, 10),
+            max_humans_per_group: parseInt(document.getElementById('modMaxHumans').value, 10),
+            group_size: parseInt(document.getElementById('modMaxHumans').value, 10),
+            history_limit: parseInt(document.getElementById('modHistoryLimit').value, 10),
+            participant_names: document.getElementById('modParticipantNames').value
+                ? document.getElementById('modParticipantNames').value.split(',').map(s => s.trim()).filter(Boolean)
+                : [],
             survey_open_days: parseInt(document.getElementById('modSurveyOpenDays').value, 10),
             group_chat_duration_minutes: parseInt(document.getElementById('modGroupChatDuration').value, 10),
             session_mode: parseInt(document.getElementById('modSessionMode').value, 10),
             bot_enabled: document.getElementById('modBotEnabled').value === 'true',
-            assignment_mode: document.getElementById('modAssignmentMode').value,
-            condition_enabled: document.getElementById('modConditionEnabled').value === 'true',
-            qualtrics_handoff_enabled: document.getElementById('modQualtricsIntegration').value === 'true',
-            qualtrics_store_chat: document.getElementById('modQualtricsIntegration').value === 'true',
+            assignment_mode: condOn ? 'stratified' : document.getElementById('modAssignmentMode').value,
+            condition_enabled: condOn,
+            turn_mode: document.getElementById('modTurnMode').value,
+            turn_duration_seconds: parseInt(document.getElementById('modTurnDuration').value, 10),
+            style_mimic_enabled: document.getElementById('modStyleMimicEnabled').value === 'true',
+            style_mimic_target: document.getElementById('modStyleMimicTarget').value.trim() || 'c',
+            ai_starts_conversation: document.getElementById('modAiStartsConversation').value === 'true',
+            qualtrics_handoff_enabled: qualOn,
+            qualtrics_store_chat: qualOn,
+            qualtrics_log_mode: document.getElementById('modQualtricsLogMode').value,
+            qualtrics_field_transcript: document.getElementById('modQualtricsTranscriptField').value.trim() || 'transcript',
+            qualtrics_field_status: document.getElementById('modQualtricsStatusField').value.trim() || 'chat_status',
             bot_reply_on_any_message: document.getElementById('modBotReplyOnAny').value === 'true',
             max_chain_depth: parseInt(document.getElementById('modMaxChainDepth').value, 10),
+            group_spend_cap_usd: parseFloat(document.getElementById('modGroupSpendCap').value) || defaultGroupCapUsd(),
+            use_mentions: document.getElementById('modUseMentions').value === 'true',
+            mention_prob: parseFloat(document.getElementById('modMentionProb').value) || 0,
+            self_correction_prob: parseFloat(document.getElementById('modSelfCorrectionProb').value) || 0,
+            parallel_start_jitter_sec: parseFloat(document.getElementById('modParallelJitter').value) || 0,
+            rethink_seconds: parseFloat(document.getElementById('modRethinkSeconds').value) || 2,
+            max_refresh_attempts: parseInt(document.getElementById('modMaxRefreshAttempts').value, 10) || 2,
             bots
         };
     } catch (e) {
@@ -727,16 +904,26 @@ async function confirmModifySession() {
         const res = await fetch(`/api/sessions/${encodeURIComponent(selectedSessionId)}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (data.status === 'success') {
+        if (res.status === 401) {
+            toast('Please sign in again');
+            window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname);
+            return;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.status === 'success') {
             toast('Saved');
             setDetailEditMode(false);
             await updateData();
             await selectSession(selectedSessionId);
         } else {
-            toast('Save failed');
+            const detail = data.detail || data.message || res.statusText || 'Save failed';
+            const msg = Array.isArray(detail)
+                ? detail.map(d => d.msg || JSON.stringify(d)).join('; ')
+                : String(detail);
+            toast(msg.length > 120 ? msg.slice(0, 117) + '…' : msg);
         }
     } catch (e) {
         toast('Network error');
@@ -761,14 +948,18 @@ async function deleteSessionAdmin(sessionId) {
 
 async function updateData() {
     try {
-        const [roomsRes, configRes, sessionsRes] = await Promise.all([
+        const [roomsRes, configRes, sessionsRes, usageRes] = await Promise.all([
             fetch('/api/admin/rooms'),
             fetch('/api/admin/config'),
-            fetch('/api/sessions')
+            fetch('/api/sessions'),
+            fetch('/api/admin/usage')
         ]);
         const data = await roomsRes.json();
         const config = await configRes.json();
         const sessData = await sessionsRes.json();
+        let usageData = {};
+        try { usageData = await usageRes.json(); } catch (_) {}
+        window.__usageCache = usageData;
 
         allRoomsCache = data.rooms || [];
         allSessionsCache = sessData.sessions || [];
@@ -782,6 +973,11 @@ async function updateData() {
             botEl.textContent = on ? 'On' : 'Off';
             botEl.style.color = on ? 'var(--success)' : 'var(--gray-500)';
         }
+        const g = usageData.global || {};
+        const spendEl = document.getElementById('total-spend');
+        const hourEl = document.getElementById('hour-spend');
+        if (spendEl) spendEl.textContent = '$' + (g.spend_usd || 0).toFixed(2);
+        if (hourEl) hourEl.textContent = '$' + (usageData.hour_spend_usd || 0).toFixed(2);
 
         renderLobbySessions(allSessionsCache);
 
@@ -789,18 +985,31 @@ async function updateData() {
         document.getElementById('rooms-body').innerHTML = allRoomsCache.map(r => {
             const botsInRoom = r.participants.filter(p => botNames.includes(p));
             const humans = r.participants.length - botsInRoom.length;
+            const spent = (r.api_spend_usd != null) ? r.api_spend_usd : 0;
+            const cap = (r.api_spend_cap_usd != null) ? r.api_spend_cap_usd : '?';
+            const spendStr = `$${spent.toFixed(2)} / $${cap}`;
+            const paused = !!r.paused;
+            const statusCell = paused
+                ? '<span class="room-paused">Paused</span>'
+                : '<span class="text-muted">Live</span>';
+            const pauseBtn = paused
+                ? `<button type="button" class="btn-row warn" onclick="unpauseRoom('${r.id}')">Resume</button>`
+                : `<button type="button" class="btn-row warn" onclick="pauseRoom('${r.id}')">Pause</button>`;
             return `<tr>
                 <td><strong>${r.id}</strong></td>
                 <td>${r.session_name || r.session_id}</td>
                 <td>${humans}</td>
                 <td>${botsInRoom.map(b => `<span class="badge-bot">${b}</span>`).join('') || '—'}</td>
                 <td>${r.message_count}</td>
+                <td title="API calls: ${r.api_calls || 0}">${spendStr}</td>
+                <td>${statusCell}</td>
                 <td>
                     <button type="button" class="btn-row" onclick="monitorRoom('${r.id}')">Watch</button>
+                    ${pauseBtn}
                     <button type="button" class="btn-row danger" onclick="deleteRoom('${r.id}')">Delete</button>
                 </td>
             </tr>`;
-        }).join('') || '<tr><td colspan="6" class="empty-state">No active rooms</td></tr>';
+        }).join('') || '<tr><td colspan="8" class="empty-state">No active rooms</td></tr>';
 
         document.getElementById('sidebar-list').innerHTML = allRoomsCache.map(r => `
             <div class="room-item ${selectedRoomId === r.id ? 'active' : ''}" onclick="selectRoom('${r.id}')">
@@ -844,13 +1053,56 @@ function selectRoom(id) {
     updateData();
 }
 
+async function pauseRoom(id) {
+    const res = await fetch(`/api/admin/rooms/${encodeURIComponent(id)}/pause`, {
+        method: 'POST',
+        credentials: 'same-origin',
+    });
+    const data = await res.json();
+    if (data.status === 'success') updateData();
+    else alert(data.message || 'Pause failed');
+}
+
+async function unpauseRoom(id) {
+    const res = await fetch(`/api/admin/rooms/${encodeURIComponent(id)}/unpause`, {
+        method: 'POST',
+        credentials: 'same-origin',
+    });
+    const data = await res.json();
+    if (data.status === 'success') updateData();
+    else alert(data.message || 'Resume failed');
+}
+
 async function deleteRoom(id) {
     if (!confirm(`Delete room ${id}?`)) return;
-    const res = await fetch(`/api/admin/rooms/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/rooms/${id}`, { method: 'DELETE', credentials: 'same-origin' });
     if ((await res.json()).status === 'success') {
         if (selectedRoomId === id) selectedRoomId = null;
         updateData();
     }
+}
+
+function renderUsageTab() {
+    const u = window.__usageCache || {};
+    const cap = u.default_group_cap_usd != null ? u.default_group_cap_usd : defaultGroupCapUsd();
+    const capEl = document.getElementById('usage-default-cap');
+    if (capEl) capEl.textContent = cap;
+    const acctCapEl = document.getElementById('usage-default-account-cap');
+    if (acctCapEl) acctCapEl.textContent = defaultAccountCapUsd();
+
+    const sessRows = (u.top_sessions || []).map(s => `
+        <tr><td>${s.session_id}</td><td>$${(s.spend_usd || 0).toFixed(4)}</td>
+        <td>${s.api_calls || 0}</td><td>${s.prompt_tokens || 0}</td><td>${s.completion_tokens || 0}</td></tr>`).join('');
+    document.getElementById('usage-sessions-table').innerHTML = sessRows
+        ? `<table class="rooms-table"><thead><tr><th>Session</th><th>Spend</th><th>Calls</th><th>Prompt tok</th><th>Completion tok</th></tr></thead><tbody>${sessRows}</tbody></table>`
+        : '<p class="empty-state">No API usage recorded yet.</p>';
+
+    const grpRows = (u.top_groups || []).map(g => `
+        <tr><td>${g.group_id}</td><td>${g.session_id || '—'}</td><td>$${(g.spend_usd || 0).toFixed(4)}</td>
+        <td>${g.api_calls || 0}</td></tr>`).join('');
+    document.getElementById('usage-groups-table').innerHTML = grpRows
+        ? `<table class="rooms-table"><thead><tr><th>Group</th><th>Session</th><th>Spend</th><th>Calls</th></tr></thead><tbody>${grpRows}</tbody></table>`
+        : '<p class="empty-state">No group usage yet.</p>';
 }
 
 function renderExportTab() {
@@ -871,7 +1123,8 @@ function renderExportTab() {
     `).join('') : '<p class="empty-state">No rooms yet</p>';
 }
 
-(function init() {
+(async function init() {
+    await syncAdminSession();
     const params = new URLSearchParams(location.search);
     let tab = params.get('tab') || 'sessions';
     if (tab === 'sandbox' || tab === 'monitor') tab = tab === 'sandbox' ? 'sessions' : 'rooms';

@@ -76,25 +76,29 @@ async def create_room_in_db(room_id: str):
             data["rooms"] = rooms
             _write_local_db(data)
 
-async def save_message(room_id: str, sender: str, text: str):
+async def save_message(room_id: str, sender: str, text: str, *, note: str = None):
     """
-    Saves a message. If the sender is a Bot, we also increment 
-    the global 'call' counter for that bot persona.
+    Saves a message. Optional note is stored for transcript/export (not shown in live chat).
     """
     message = {
         "room_id": room_id,
         "sender": sender,
         "text": text,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+    if note:
+        message["note"] = note
 
     if USE_MONGO:
-        await messages_collection.insert_one({
+        doc = {
             "room_id": room_id,
             "sender": sender,
             "text": text,
-            "timestamp": datetime.now()
-        })
+            "timestamp": datetime.now(),
+        }
+        if note:
+            doc["note"] = note
+        await messages_collection.insert_one(doc)
     else:
         data = _read_local_db()
         messages = data.get("messages", [])
@@ -192,3 +196,18 @@ async def delete_room_data(room_id: str):
         data["messages"] = [m for m in data.get("messages", []) if m.get("room_id") != room_id]
         _write_local_db(data)
     print(f"🗑️ DB: All data for room {room_id} deleted.")
+
+
+async def wipe_all_chat_history() -> int:
+    """Delete every room and message (local JSON or Mongo). Returns message count removed."""
+    if USE_MONGO:
+        msg_result = await messages_collection.delete_many({})
+        await rooms_collection.delete_many({})
+        n = int(msg_result.deleted_count)
+        print(f"🗑️ DB: Wiped all Mongo chat history ({n} messages).")
+        return n
+    data = _read_local_db()
+    n = len(data.get("messages", []))
+    _write_local_db({"rooms": [], "messages": [], "bot_stats": data.get("bot_stats", [])})
+    print(f"🗑️ DB: Wiped local chat history ({n} messages, all rooms).")
+    return n

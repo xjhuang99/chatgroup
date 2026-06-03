@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — ACTR</title>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--primary-gradient); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .card { background: white; border-radius: 16px; padding: 36px 40px; max-width: 440px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .logo { font-weight: 800; font-size: 1.8rem; color: var(--orange); text-align: center; }
+        .sub { text-align: center; color: #888; font-size: 0.88rem; margin: 8px 0 24px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: #555; }
+        input { width: 100%; padding: 11px 14px; border: 2px solid #e8e8e8; border-radius: 8px; font-size: 0.95rem; }
+        input:focus { outline: none; border-color: var(--orange); }
+        .hint { font-size: 0.78rem; color: #888; margin-top: 4px; }
+        .btn { width: 100%; padding: 13px; border: none; border-radius: 8px; background: var(--primary-gradient); color: white; font-weight: 700; cursor: pointer; }
+        .error, .success { padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 14px; display: none; }
+        .error { background: #fee; color: #c33; border: 1px solid #fcc; }
+        .success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .cred { font-family: ui-monospace, monospace; background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 0.88rem; margin-top: 10px; }
+        .links { text-align: center; margin-top: 18px; font-size: 0.88rem; }
+        .links a { color: var(--orange-dark); font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">ACTR</div>
+    <div class="sub">Researcher account · $200 API budget per email</div>
+    <div id="err" class="error"></div>
+    <div id="ok" class="success"></div>
+    <form id="regForm">
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" required placeholder="you@ust.hk">
+        </div>
+        <div class="form-group">
+            <label>Username <span class="hint">(optional — auto-generated if blank)</span></label>
+            <input type="text" id="username" pattern="[a-zA-Z0-9._-]{3,32}" placeholder="e.g. xinjie.h">
+        </div>
+        <div class="form-group">
+            <label>Password <span class="hint">(optional — random password if blank)</span></label>
+            <input type="password" id="password" minlength="8" placeholder="min 8 characters">
+        </div>
+        <button type="submit" class="btn">Create account</button>
+    </form>
+    <div id="credBox" style="display:none;">
+        <p><strong>Save these credentials now</strong> (password shown once):</p>
+        <div class="cred" id="credText"></div>
+        <p style="margin-top:14px;"><a href="/">Go to Dashboard →</a></p>
+    </div>
+    <div class="links"><a href="/login">Already have an account? Sign in</a></div>
+</div>
+<script>
+document.getElementById('regForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const err = document.getElementById('err');
+    const ok = document.getElementById('ok');
+    err.style.display = ok.style.display = 'none';
+    const body = { email: document.getElementById('email').value.trim() };
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value;
+    if (u) body.username = u;
+    if (p) body.password = p;
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            err.textContent = data.detail || 'Registration failed';
+            err.style.display = 'block';
+            return;
+        }
+        document.getElementById('regForm').style.display = 'none';
+        document.getElementById('credBox').style.display = 'block';
+        const c = data.credentials;
+        document.getElementById('credText').textContent =
+            'Username: ' + c.username + '\nPassword: ' + c.password +
+            '\nBudget: $' + (data.account.spend_cap_usd || 200) + ' API spend';
+        sessionStorage.setItem('actr_admin', '1');
+    } catch (_) {
+        err.textContent = 'Could not reach server.';
+        err.style.display = 'block';
+    }
+};
+</script>
+</body>
+</html>

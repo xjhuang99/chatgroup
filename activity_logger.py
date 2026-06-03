@@ -11,18 +11,12 @@ from enum import Enum
 
 class ActivityType(Enum):
     """Activity event types."""
-    ROOM_CREATED = "room_created"
-    ROOM_CLOSED = "room_closed"
     USER_MESSAGE = "user_message"
     BOT_RESPONSE = "bot_response"
     BOT_TRIGGERED = "bot_triggered"
     BOT_SKIPPED = "bot_skipped"
     SESSION_STARTED = "session_started"
-    SESSION_PAUSED = "session_paused"
-    SESSION_CLOSED = "session_closed"
-    CONFIG_CHANGED = "config_changed"
     ERROR_OCCURRED = "error_occurred"
-    EXPORT_REQUESTED = "export_requested"
 
 
 class Activity:
@@ -55,9 +49,7 @@ class Activity:
 
 
 class ActivityLogger:
-    """
-    Persists activity to memory and JSONL files per session.
-  """
+    """Persists activity to memory and JSONL files per session."""
 
     def __init__(self, log_dir: str = "activity_logs"):
         self.log_dir = log_dir
@@ -72,19 +64,6 @@ class ActivityLogger:
         self.activities[session_id].append(activity)
         self._save_activity_to_file(session_id, activity)
         return activity.timestamp
-
-    def log_room_created(self, session_id: str, room_id: str, participant_id: str):
-        self.log_activity(
-            Activity(
-                ActivityType.ROOM_CREATED,
-                session_id,
-                room_id=room_id,
-                details={"participant_id": participant_id},
-            )
-        )
-
-    def log_room_closed(self, session_id: str, room_id: str):
-        self.log_activity(Activity(ActivityType.ROOM_CLOSED, session_id, room_id=room_id))
 
     def log_user_message(self, session_id: str, room_id: str, user_id: str, message: str):
         self.log_activity(
@@ -113,14 +92,24 @@ class ActivityLogger:
             Activity(ActivityType.BOT_TRIGGERED, session_id, room_id=room_id, actor=bot_name)
         )
 
-    def log_bot_skipped(self, session_id: str, room_id: str, bot_name: str):
+    def log_bot_skipped(
+        self,
+        session_id: str,
+        room_id: str,
+        bot_name: str,
+        reason: str = "skipped",
+        extra: Optional[Dict] = None,
+    ):
+        details = {"reason": reason}
+        if extra:
+            details.update(extra)
         self.log_activity(
             Activity(
                 ActivityType.BOT_SKIPPED,
                 session_id,
                 room_id=room_id,
                 actor=bot_name,
-                details={"reason": "mode_3_skip"},
+                details=details,
             )
         )
 
@@ -128,12 +117,6 @@ class ActivityLogger:
         self.log_activity(
             Activity(ActivityType.SESSION_STARTED, session_id, details={"session_name": session_name})
         )
-
-    def log_session_closed(self, session_id: str):
-        self.log_activity(Activity(ActivityType.SESSION_CLOSED, session_id))
-
-    def log_config_changed(self, session_id: str, changes: Dict):
-        self.log_activity(Activity(ActivityType.CONFIG_CHANGED, session_id, details=changes))
 
     def log_error(self, session_id: str, error_id: str, context: str):
         self.log_activity(
@@ -144,29 +127,10 @@ class ActivityLogger:
             )
         )
 
-    def log_export_requested(self, session_id: str, export_type: str):
-        self.log_activity(
-            Activity(ActivityType.EXPORT_REQUESTED, session_id, details={"export_type": export_type})
-        )
-
     def get_session_activities(self, session_id: str) -> List[Dict]:
         if session_id not in self.activities:
             return []
         return [a.to_dict() for a in self.activities[session_id]]
-
-    def get_room_activities(self, session_id: str, room_id: str) -> List[Dict]:
-        if session_id not in self.activities:
-            return []
-        return [a.to_dict() for a in self.activities[session_id] if a.room_id == room_id]
-
-    def get_activities_by_type(self, session_id: str, activity_type: ActivityType) -> List[Dict]:
-        if session_id not in self.activities:
-            return []
-        return [
-            a.to_dict()
-            for a in self.activities[session_id]
-            if a.activity_type == activity_type.value
-        ]
 
     def get_recent_activities(self, session_id: str, limit: int = 50) -> List[Dict]:
         if session_id not in self.activities:
@@ -182,6 +146,15 @@ class ActivityLogger:
         except Exception as e:
             print(f"⚠️ Failed to save activity: {e}")
 
+    @staticmethod
+    def _activity_from_persisted(data: Dict) -> Activity:
+        """Rebuild Activity from JSONL (disk uses event_type in to_dict output)."""
+        activity = Activity.__new__(Activity)
+        activity.__dict__.update(data)
+        if not getattr(activity, "activity_type", None):
+            activity.activity_type = data.get("event_type") or data.get("activity_type") or "unknown"
+        return activity
+
     def _load_activities_from_disk(self):
         for filename in os.listdir(self.log_dir):
             if filename.endswith("_activity.jsonl"):
@@ -192,28 +165,11 @@ class ActivityLogger:
                     with open(log_file, "r", encoding="utf-8") as f:
                         for line in f:
                             data = json.loads(line)
-                            activity = Activity.__new__(Activity)
-                            activity.__dict__.update(data)
-                            activities.append(activity)
+                            activities.append(self._activity_from_persisted(data))
                     if activities:
                         self.activities[session_id] = activities
                 except Exception as e:
                     print(f"⚠️ Failed to load activities: {e}")
-
-    def get_activity_stats(self, session_id: str) -> Dict:
-        if session_id not in self.activities:
-            return {}
-        activities = self.activities[session_id]
-        type_count = {}
-        for activity in activities:
-            type_count[activity.activity_type] = type_count.get(activity.activity_type, 0) + 1
-        return {
-            "session_id": session_id,
-            "total_activities": len(activities),
-            "by_type": type_count,
-            "first_activity": activities[0].timestamp if activities else None,
-            "last_activity": activities[-1].timestamp if activities else None,
-        }
 
 
 activity_logger = ActivityLogger()

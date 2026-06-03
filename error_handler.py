@@ -123,51 +123,5 @@ class ErrorHandler:
             return self.error_logs[error_id].to_dict()
         return None
 
-    def get_recent_errors(self, limit: int = 20) -> list:
-        sorted_logs = sorted(
-            self.error_logs.values(), key=lambda x: x.timestamp, reverse=True
-        )
-        return [log.to_dict() for log in sorted_logs[:limit]]
-
-    def get_errors_by_context(self, context: str) -> list:
-        return [
-            log.to_dict()
-            for log in self.error_logs.values()
-            if context in log.context
-        ]
-
-    def get_errors_by_severity(self, severity: ErrorSeverity) -> list:
-        return [
-            log.to_dict()
-            for log in self.error_logs.values()
-            if log.severity == severity.value
-        ]
-
-    def get_error_stats(self) -> Dict:
-        return {
-            "total_errors": sum(self.error_stats.values()),
-            "by_severity": self.error_stats.copy(),
-            "by_context": self._count_by_context(),
-        }
-
-    def _count_by_context(self) -> Dict[str, int]:
-        context_count = {}
-        for log in self.error_logs.values():
-            context_count[log.context] = context_count.get(log.context, 0) + 1
-        return context_count
-
-    def clear_old_logs(self, days: int = 7):
-        from datetime import timedelta
-
-        cutoff_time = datetime.now() - timedelta(days=days)
-        to_delete = []
-        for error_id, log in self.error_logs.items():
-            log_time = datetime.fromisoformat(log.timestamp)
-            if log_time < cutoff_time:
-                to_delete.append(error_id)
-        for error_id in to_delete:
-            del self.error_logs[error_id]
-        print(f"✅ Cleared {len(to_delete)} old error logs")
-
 
 error_handler = ErrorHandler()

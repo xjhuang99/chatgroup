@@ -1,21 +1,61 @@
 """
 Canonical example defaults for new sessions, API fallbacks, and Admin ★ Example.
-Keep templates/admin.html HUMAN_LIKE_PRESET in sync when changing values here.
+Keep templates/admin.html chat model lists in sync when changing values here.
 """
 
+import os
 from typing import Any, Dict, Optional, Tuple
 
-# Strongest GPT chat models in Admin (keep templates/admin.html GPT_CHAT_MODELS in sync)
+# OpenAI chat models (keep templates/admin.html GPT_CHAT_MODELS in sync)
 GPT_CHAT_MODELS: Tuple[str, ...] = ("gpt-5.5", "gpt-5", "gpt-4o")
 DEFAULT_GPT_CHAT_MODEL = "gpt-5"
 
+# DeepSeek (OpenAI-compatible API — set DEEPSEEK_API_KEY in .env)
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEEPSEEK_CHAT_MODELS: Tuple[str, ...] = ("deepseek-chat", "deepseek-reasoner")
+DEFAULT_DEEPSEEK_CHAT_MODEL = "deepseek-chat"
+
+
+def default_llm_provider() -> str:
+    """Default provider when model is unset; LLM_PROVIDER=deepseek|openai (default deepseek)."""
+    raw = (os.getenv("LLM_PROVIDER") or "deepseek").strip().lower()
+    if raw in ("openai", "deepseek"):
+        return raw
+    return "deepseek"
+
+
+def active_llm_provider() -> str:
+    """Alias for default_llm_provider (session defaults / aux routing)."""
+    return default_llm_provider()
+
+
+def provider_for_model(model: Optional[str]) -> str:
+    """Route API client by model id; GPT/o* → OpenAI, deepseek* → DeepSeek."""
+    m = (model or "").strip().lower()
+    if m.startswith("deepseek"):
+        return "deepseek"
+    if m.startswith("gpt") or m.startswith("o"):
+        return "openai"
+    return default_llm_provider()
+
+
+def default_chat_model() -> str:
+    if default_llm_provider() == "openai":
+        env = (os.getenv("OPENAI_CHAT_MODEL") or "").strip()
+        if env in GPT_CHAT_MODELS:
+            return env
+        return DEFAULT_GPT_CHAT_MODEL
+    return (os.getenv("DEEPSEEK_CHAT_MODEL") or DEFAULT_DEEPSEEK_CHAT_MODEL).strip()
+
 
 def normalize_gpt_chat_model(model: Optional[str]) -> str:
-    """Return a whitelisted GPT model id; unknown values fall back to default."""
+    """Return a whitelisted model id (DeepSeek or OpenAI)."""
     m = (model or "").strip()
+    if m in DEEPSEEK_CHAT_MODELS:
+        return m
     if m in GPT_CHAT_MODELS:
         return m
-    return DEFAULT_GPT_CHAT_MODEL
+    return default_chat_model()
 
 
 HUMAN_LIKE_PROMPT = (
@@ -36,7 +76,7 @@ HUMAN_LIKE_PROMPT = (
 HUMAN_LIKE_SESSION: Dict[str, Any] = {
     "session_mode": 1,
     "bot_reply_on_any_message": True,
-    "max_chain_depth": 10,
+    "max_chain_depth": 2,
     "use_mentions": False,
     "mention_prob": 0.0,
     "self_correction_prob": 0.0,
@@ -45,9 +85,20 @@ HUMAN_LIKE_SESSION: Dict[str, Any] = {
     "turn_mode": "none",
 }
 
+# Session mode 4: parallel bot API + refresh when a peer posts (see actr/room_context.py)
+MODE_4_SESSION_DEFAULTS: Dict[str, Any] = {
+    "parallel_start_jitter_sec": 1.5,
+    "rethink_seconds": 2.0,
+    "max_refresh_attempts": 2,
+}
+
+# Qualtrics: transcript = chat lines only; full = research log (prompts, decisions, notes)
+QUALTRICS_LOG_TRANSCRIPT = "transcript"
+QUALTRICS_LOG_FULL = "full"
+
 HUMAN_LIKE_BOT: Dict[str, Any] = {
     "prompt": HUMAN_LIKE_PROMPT,
-    "model": DEFAULT_GPT_CHAT_MODEL,
+    "model": DEFAULT_DEEPSEEK_CHAT_MODEL,
     "mode": 3,
     "avatar_type": "human",
     "disclosed_ai_allowed": False,
@@ -67,10 +118,6 @@ HUMAN_LIKE_BOT: Dict[str, Any] = {
 def apply_human_session_defaults(session) -> None:
     for key, value in HUMAN_LIKE_SESSION.items():
         setattr(session, key, value)
-
-
-def human_like_bot_config(overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    cfg = dict(HUMAN_LIKE_BOT)
-    if overrides:
-        cfg.update(overrides)
-    return cfg
+    for key, value in MODE_4_SESSION_DEFAULTS.items():
+        setattr(session, key, value)
+    session.qualtrics_log_mode = QUALTRICS_LOG_TRANSCRIPT

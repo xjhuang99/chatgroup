@@ -253,6 +253,23 @@
     let hadConnectedChat = false;
     let chatUiRevealed = false;
     const pendingChatMessages = [];
+    /** Dedupe history vs WebSocket (same sender+text). */
+    const seenMessageContent = new Set();
+
+    function messageContentKey(sender, text) {
+        return `${sender}\0${text}`;
+    }
+
+    function queueChatMessage(sender, text) {
+        const key = messageContentKey(sender, text);
+        if (seenMessageContent.has(key)) return;
+        seenMessageContent.add(key);
+        if (chatUiRevealed) {
+            renderMessage(sender, text);
+        } else {
+            pendingChatMessages.push({ sender, text });
+        }
+    }
 
     const onboardingOverlay = document.getElementById('onboarding-overlay');
     const onboardingCard = document.getElementById('onboarding-card');
@@ -372,6 +389,24 @@
         av.setAttribute('aria-hidden', 'true');
         av.textContent = kind === 'bot' ? '🤖' : '👤';
         return av;
+    }
+
+    let chatHistoryLoaded = false;
+
+    async function loadChatHistory() {
+        if (chatHistoryLoaded || !sessionId || !groupId || !participantId) return;
+        try {
+            const res = await fetch(
+                `/api/groups/${encodeURIComponent(sessionId)}/${encodeURIComponent(groupId)}/messages?participant_id=${encodeURIComponent(participantId)}`
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            chatHistoryLoaded = true;
+            const messages = data.messages || [];
+            messages.forEach((m) => queueChatMessage(m.sender, m.text));
+        } catch (e) {
+            console.warn('History load failed', e);
+        }
     }
 
     function renderMessage(sender, text) {
@@ -515,12 +550,12 @@
             flushQualtricsHandoffSync(reason);
             return;
         }
-        handoffInFlight = true;
         const qualtricsOn = !!(
             sessionConfig.qualtrics_handoff_enabled || sessionConfig.qualtrics_store_chat
         );
         if (!qualtricsOn) return;
 
+        handoffInFlight = true;
         try {
             const res = await fetch('/api/embed/handoff', {
                 method: 'POST',
@@ -628,9 +663,9 @@
                     const res = await fetch(matchUrl);
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
-                    if (data.status === 'session_closed') {
+                    if (data.status === 'session_closed' || data.status === 'session_not_found') {
                         clearInterval(poll);
-                        reject(new Error(data.message || 'This study session is closed.'));
+                        reject(new Error(data.message || 'This study session is unavailable.'));
                         return;
                     }
                     if (data.status === 'matched') {
@@ -666,6 +701,15 @@
 
             if (!payload || !payload.type) return;
 
+            if (payload.type === 'error') {
+                if (!nameResolved) {
+                    clearTimeout(failTimer);
+                    reject(new Error(payload.message || 'Connection refused'));
+                } else {
+                    showError(payload.message || 'Connection error');
+                }
+                return;
+            }
             if (payload.type === 'display_name') {
                 myDisplayName = payload.name;
                 if (!nameResolved) {
@@ -696,11 +740,7 @@
                 return;
             }
             if (payload.type === 'message') {
-                if (chatUiRevealed) {
-                    renderMessage(payload.sender, payload.text);
-                } else {
-                    pendingChatMessages.push({ sender: payload.sender, text: payload.text });
-                }
+                queueChatMessage(payload.sender, payload.text);
                 return;
             }
             };
@@ -761,6 +801,7 @@
             if (matchWait > 0) await sleep(matchWait);
 
             await loadConfig();
+            await loadChatHistory();
 
             const displayName = await connectWebSocket(groupId);
             await showAssignedOnboarding(displayName);

@@ -120,11 +120,15 @@
         <a href="#matching">Matching</a>
         <a href="#example-condition">Example condition</a>
         <a href="#session-modes">Session modes</a>
+        <a href="#session-mode-4">Session mode 4</a>
         <a href="#group-chat-flow">Group chat flow</a>
         <a href="#persona-modes">Persona modes</a>
+        <a href="#llm-models">LLM models</a>
         <a href="#recommended-defaults">Recommended defaults</a>
         <a href="#qualtrics">Qualtrics</a>
+        <a href="#read-only">Read-only after end</a>
         <a href="#dashboard">Dashboard</a>
+        <a href="#usage-cost">Usage &amp; cost</a>
         <a href="#faq">FAQ</a>
     </aside>
 
@@ -136,7 +140,7 @@
 
             <h2>Quick start</h2>
             <ol>
-                <li>Open <a href="/admin">Admin</a>. Click <strong>★ Example</strong>, set <strong>Group size</strong> and persona names, then <strong>Create Session</strong>.</li>
+                <li>Open <a href="/admin">Admin</a>. Click <strong>★ Example</strong>, set <strong>Min / max humans per group</strong> and persona names, then <strong>Create Session</strong>.</li>
                 <li>After create, copy the <strong>Qualtrics HTML</strong> block (if Qualtrics is On) from the setup panel below the form.</li>
                 <li>Participants complete the survey, chat in the embedded room, and click <strong>Next</strong>. You monitor live traffic on the <a href="/">Dashboard</a> and download CSVs under <strong>Export</strong> if needed.</li>
             </ol>
@@ -144,8 +148,8 @@
             <h3>Typical room layouts</h3>
             <p>The Admin form defaults to <strong>group size 1</strong> when you click ★ Example.</p>
             <ul>
-                <li><strong>1 human + 2 bots:</strong> Group size = 1, personas <code>a</code> and <code>b</code>, participant name <code>c</code>.</li>
-                <li><strong>2 humans + 2 bots:</strong> Group size = 2, personas <code>a</code> and <code>b</code>, participant names <code>c,d</code>.</li>
+                <li><strong>1 human + 2 bots:</strong> Min = max = <strong>1</strong>, personas <code>a</code> and <code>b</code>, participant name <code>c</code>.</li>
+                <li><strong>2 humans + 2 bots:</strong> Min = max = <strong>2</strong>, personas <code>a</code> and <code>b</code>, participant names <code>c,d</code>.</li>
             </ul>
             <p>Persona names and human names must not overlap (e.g. do not use <code>a</code> as both a bot and a human label).</p>
             <div class="note">New sessions start from the ★ Example settings. Existing sessions keep their saved values until you edit them on the Dashboard.</div>
@@ -161,10 +165,15 @@
                 <tbody>
                     <tr><td>Session name</td><td>Your label only. The system also assigns a session ID such as <code>SES-AB12C</code>.</td></tr>
                     <tr><td>AI bots</td><td><strong>On</strong> — personas can send messages. <strong>Off</strong> — humans only.</td></tr>
-                    <tr><td>Group size</td><td>Number of <em>humans</em> matched into each group (★ Example default: <strong>1</strong>). Bots are extra and not counted in this number.</td></tr>
+                    <tr><td>Min humans / group</td><td>Minimum humans in the same <em>forming</em> group before chat starts. ★ Example default: <strong>1</strong>.</td></tr>
+                    <tr><td>Max humans / group</td><td>Maximum humans per group. When a forming group already has this many, the <strong>next</strong> participant joins <strong>another</strong> forming group (not the same queue line). ★ Example default: <strong>1</strong>.</td></tr>
+                    <tr><td>Fixed size</td><td>When <strong>min = max</strong> (e.g. 2 and 2), behavior matches the old single “group size” field: wait until exactly N humans, then open the room.</td></tr>
+                    <tr><td>Flexible size</td><td>When <strong>min &lt; max</strong> (e.g. 1–3), chat starts as soon as <code>min</code> humans are together; that room has at most <code>max</code> humans. The 4th person (if max=3) waits in a new forming group.</td></tr>
                     <tr><td>Session mode</td><td>Which personas may react to each incoming message — see <a href="#session-modes">Session modes</a> (distinct from persona mode).</td></tr>
                     <tr><td>Survey open (days)</td><td>How long new participants can enter the waiting queue (default 7).</td></tr>
-                    <tr><td>Chat duration (min)</td><td>Each group chat ends this many minutes after the group is formed (default 5).</td></tr>
+                    <tr><td>Chat duration (min)</td><td>Each group chat ends this many minutes after the group is formed (Admin default <strong>3</strong>; adjust per study).</td></tr>
+                    <tr><td>Qualtrics log content</td><td><strong>Transcript</strong> — chat lines + export notes (e.g. mode 4 refresh). <strong>Full</strong> — research JSONL (prompts, persona mode 4 scores, refresh events) written into the Qualtrics transcript field (~240k cap). Dashboard can change this after create.</td></tr>
+                    <tr><td>API cap / group</td><td>Max estimated API spend per <code>GRP-…</code> room (default <strong>$8</strong>). Dashboard → Edit updates new and <em>active</em> groups.</td></tr>
                     <tr><td>Participant names</td><td>Optional comma-separated display names for humans in join order, e.g. <code>c,d</code>. Leave blank to use auto IDs.</td></tr>
                 </tbody>
             </table>
@@ -174,8 +183,9 @@
             <ul>
                 <li><strong>Condition On</strong> (default) — only participants with the same Qualtrics <code>condition</code> value are matched; <strong>Assignment</strong> is locked to stratified.</li>
                 <li><strong>Condition Off</strong> — <strong>FIFO</strong> = one line for everyone; <strong>Stratified</strong> = separate lines per <code>condition</code> bucket (if you still pass <code>condition</code> in the URL).</li>
+                <li><strong>Forming groups</strong> — the server keeps several partial groups open. You join the first group with space (&lt; max humans). When count ≥ min humans, that group’s chat starts. If min = max, this is fixed-size matching.</li>
             </ul>
-            <p>Matching decides <em>who waits together</em>. It does not control bot speech rules (session mode, persona delay, chain depth, etc.).</p>
+            <p>Matching decides <em>who waits together</em>. It does not control bot speech rules (session mode, persona delay, chain depth, etc.). Changing min/max on the Dashboard affects <strong>new</strong> joiners only (people already waiting keep their forming group).</p>
 
             <h3 id="example-condition">Qualtrics <code>condition</code> field (★ Example default)</h3>
             <p>The ★ Example preset turns <strong>Condition On</strong> in Admin. It does <em>not</em> assign one fixed <code>condition</code> value for every respondent — you set that in <strong>Qualtrics → Survey Flow → Embedded Data</strong>, and the iframe passes <code>${e://Field/condition}</code>.</p>
@@ -236,11 +246,12 @@
                 <thead><tr><th>Field</th><th>What it does</th></tr></thead>
                 <tbody>
                     <tr><td>Name</td><td>Display name in chat. With Condition On, some conditions may show “(may use AI)” next to certain names.</td></tr>
+                    <tr><td>Model</td><td>Which LLM powers this persona — see <a href="#llm-models">LLM models</a>. ★ Example uses <code>deepseek-chat</code> for both personas.</td></tr>
                     <tr><td>Avatar</td><td>Bot 🤖 or Human 👤 — cosmetic only in the chat UI.</td></tr>
                     <tr><td>Persona mode</td><td>When <em>this</em> persona speaks — see <a href="#persona-modes">Persona modes</a> (not the same as session mode).</td></tr>
                     <tr><td>Prompt</td><td>System instructions for tone, topic, and deflection rules. Use <strong>Sync prompt to all</strong> to copy persona 1’s prompt to every persona.</td></tr>
                     <tr><td>Reply on any message</td><td>Session-level control above the persona cards. <strong>On</strong> (preset) — bot messages can trigger other bots (within max chain depth). <strong>Off</strong> — only human messages start bot replies.</td></tr>
-                    <tr><td>Max chain depth</td><td>Session-level: bot-to-bot follow-up rounds after one trigger message (preset <strong>10</strong>). Lower values quiet the room.</td></tr>
+                    <tr><td>Max chain depth</td><td>Caps bot-to-bot follow-ups when <strong>Reply on any message</strong> is On (preset <strong>2</strong>, range 1–10). After each bot reply, the server may start another bot wave only while <code>chain_depth &lt; max_chain_depth</code>. Lower values quiet the room.</td></tr>
                     <tr><td>Delay (sec)</td><td>Per-persona wait before generating a reply (main spacing control; no separate session cooldown). Persona modes 2–4 add 0.5–2.5 s random jitter.</td></tr>
                     <tr><td>Typing (chars/sec)</td><td>Simulated typing delay before the message appears (1–6; preset 2).</td></tr>
                     <tr><td>Silence timeout (sec)</td><td>If the room is quiet this long, a persona may send a nudge (preset 50 s).</td></tr>
@@ -250,6 +261,18 @@
                     <tr><td>Emoji</td><td><strong>Off</strong> (preset) or <strong>On</strong> — allow occasional emojis in replies; when Off, the model is instructed not to use them and stray emoji are stripped.</td></tr>
                     <tr><td>Context (chars)</td><td>How much recent chat history is sent to the model (10,000–10,000,000; default 100,000).</td></tr>
                     <tr><td>Skip rate</td><td>Persona mode 3 only: probability this persona skips an eligible message (0–80%; preset 15%).</td></tr>
+                    <tr><td><code>mode_4_threshold</code></td><td>Persona mode 4 only (in persona JSON): reply if model score <code>reply_p</code> ≥ threshold (default <strong>0.5</strong>). No second random dice.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Session-level bot interaction (Admin + Dashboard)</h3>
+            <table class="param-table">
+                <thead><tr><th>Field</th><th>What it does</th></tr></thead>
+                <tbody>
+                    <tr><td>Use @mentions</td><td>When On, bots may add <code>@name</code> in replies (probability below).</td></tr>
+                    <tr><td>Mention probability</td><td>Chance a bot prefixes a reply with <code>@teammate</code> when mentions are On.</td></tr>
+                    <tr><td>Self-correction prob.</td><td>Chance a bot sends a short follow-up correcting its previous line.</td></tr>
+                    <tr><td>History limit</td><td>Max messages kept in memory per room (Dashboard; default 10,000).</td></tr>
                 </tbody>
             </table>
         </div>
@@ -262,8 +285,24 @@
                 <li><strong>Mode 1 — all bots (preset):</strong> Every persona may be queued to reply to each eligible message. Combined with persona mode 3 (skip), not every bot will actually speak every time.</li>
                 <li><strong>Mode 2 — one bot per message:</strong> The system picks a single persona per message. Calmer than mode 1.</li>
                 <li><strong>Mode 3 — @mention only:</strong> A persona replies only if its name or <code>@name</code> appears in the message text.</li>
+                <li><strong>Mode 4 — parallel + refresh:</strong> All eligible personas may run <em>in parallel</em> (staggered by start jitter). If someone else posts while a bot is drafting, that draft is discarded; after <strong>rethink</strong> seconds the bot regenerates with a refresh note (up to <strong>max refresh attempts</strong> total tries, then the reply is skipped). See <a href="#session-mode-4">Session mode 4</a>.</li>
             </ul>
-            <p>A persona never replies to its own message (reduces self-triggered chains).</p>
+            <p>A persona never replies to its own message (reduces self-triggered chains). Session mode and persona mode are independent — e.g. mode 4 orchestration with persona mode 3 skip is valid.</p>
+        </div>
+
+        <div class="section" id="session-mode-4">
+            <h2>Session mode 4 (parallel + refresh)</h2>
+            <p>Use when you want multiple bots to feel like they are “listening” at once, without all posting identical lines after every human message.</p>
+            <table class="param-table">
+                <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td>Start jitter (sec)</td><td>1.5</td><td>Each bot waits a random <code>0…N</code> seconds before starting its API call.</td></tr>
+                    <tr><td>Rethink (sec)</td><td>2.0</td><td>After a peer’s message invalidates a draft, pause this long before regenerating.</td></tr>
+                    <tr><td>Max refresh attempts</td><td>2</td><td><strong>Total</strong> generation tries per bot per trigger (not “2 refreshes after the first”). If both fail validation/send, that bot skips that turn.</td></tr>
+                </tbody>
+            </table>
+            <p>Only <strong>other participants’</strong> messages bump the room <code>context_version</code> (not the bot’s own commit). Refresh notes appear in the transcript and in Qualtrics export when log mode is transcript or full.</p>
+            <div class="note">Changing session mode on the Dashboard affects <em>new</em> bot turns immediately; bots already mid-draft follow the queue they started under.</div>
         </div>
 
         <div class="section" id="group-chat-flow">
@@ -274,9 +313,9 @@
                 <li>Someone sends a line over WebSocket → saved to history and context.</li>
                 <li>Session mode decides which personas are <em>eligible</em> (all, one, or @mentioned only).</li>
                 <li>Each eligible persona runs its <strong>persona mode</strong> (delay, skip, or probability).</li>
-                <li>If <strong>Reply on any message</strong> is On and <strong>max chain depth</strong> allows, bot replies can trigger further bot rounds until the depth limit is reached.</li>
+                <li>If <strong>Reply on any message</strong> is On, each bot reply calls <code>schedule_bot_chain</code> with the current <code>chain_depth</code>. Another bot wave runs only when <code>chain_depth &lt; max_chain_depth</code> (★ Example: <strong>2</strong> → human/opening at depth 0, then up to two bot-triggered waves at depths 1 and 2).</li>
             </ol>
-            <p>If the room feels noisy, lower chain depth, increase each persona’s delay, raise skip rate, or switch to session mode <strong>2</strong>.</p>
+            <p>If the room feels noisy, lower chain depth, turn <strong>Reply on any message</strong> Off, increase each persona’s delay, raise skip rate, or switch to session mode <strong>2</strong>.</p>
         </div>
 
         <div class="section" id="persona-modes">
@@ -286,8 +325,25 @@
                 <li><strong>Mode 1 — fixed delay:</strong> Always replies (after delay + typing) when eligible.</li>
                 <li><strong>Mode 2 — random delay:</strong> Always replies; adds 0.5–2.5 s jitter before generation.</li>
                 <li><strong>Mode 3 — random skip (preset):</strong> Each eligible message: roll against skip rate; if not skipped, reply with delay + jitter + typing.</li>
-                <li><strong>Mode 4 — context chance:</strong> Model estimates reply probability from context, then one random draw. Good when you want fewer but more “thoughtful” replies.</li>
+                <li><strong>Mode 4 — context chance:</strong> Auxiliary model estimates <code>reply_p</code> from context; the persona replies only if <code>reply_p ≥ mode_4_threshold</code> (default 0.5). There is <em>no</em> second random roll. Scores are logged when Qualtrics log mode is <strong>Full</strong>.</li>
             </ul>
+        </div>
+
+        <div class="section" id="llm-models">
+            <h2>LLM models</h2>
+            <p>Each persona has its own <strong>Model</strong> dropdown on Admin. The server routes API calls from the model id — DeepSeek models use <code>DEEPSEEK_API_KEY</code>; GPT models use <code>OPENAI_API_KEY</code>.</p>
+            <table class="param-table">
+                <thead><tr><th>Model</th><th>Provider</th><th>Notes</th></tr></thead>
+                <tbody>
+                    <tr><td><code>deepseek-chat</code></td><td>DeepSeek</td><td>★ Example default; general chat.</td></tr>
+                    <tr><td><code>deepseek-reasoner</code></td><td>DeepSeek</td><td>Heavier reasoning; higher cost per token.</td></tr>
+                    <tr><td><code>gpt-5.5</code></td><td>OpenAI</td><td>Strongest GPT option in Admin.</td></tr>
+                    <tr><td><code>gpt-5</code></td><td>OpenAI</td><td>Recommended GPT balance.</td></tr>
+                    <tr><td><code>gpt-4o</code></td><td>OpenAI</td><td>Stable GPT fallback.</td></tr>
+                </tbody>
+            </table>
+            <p>Session-level orchestration (intent router, persona mode 4 scoring) uses auxiliary models from <code>DEEPSEEK_AUX_MODEL</code> or <code>OPENAI_AUX_MODEL</code> depending on <code>LLM_PROVIDER</code> — not the per-persona dropdown.</p>
+            <div class="note">Put keys in <code>.env</code> (see <code>.env.example</code>). You can mix providers in one session (e.g. persona <code>a</code> on DeepSeek, <code>b</code> on GPT-5).</div>
         </div>
 
         <div class="section" id="recommended-defaults">
@@ -300,7 +356,8 @@
                     <tr><td>Group size</td><td><strong>1</strong></td><td>One human per group; common layout is 1 human + 2 bots.</td></tr>
                     <tr><td>Session mode</td><td><strong>1</strong></td><td>All bots may respond; persona skip thins traffic.</td></tr>
                     <tr><td>Reply on any message</td><td><strong>On</strong></td><td>Bots may react to bot messages within max chain depth.</td></tr>
-                    <tr><td>Max chain depth</td><td><strong>10</strong></td><td>Bot-to-bot follow-up rounds after one trigger message.</td></tr>
+                    <tr><td>Max chain depth</td><td><strong>2</strong></td><td>Matches <code>human_defaults.py</code> and Admin ★ Example; allows bot-triggered waves at depths 1 and 2 after a human/opening at depth 0.</td></tr>
+                    <tr><td>Model (each persona)</td><td><strong>deepseek-chat</strong></td><td>Default API; set <code>OPENAI_API_KEY</code> and pick a GPT model per persona if needed.</td></tr>
                     <tr><td>AI opens chat</td><td><strong>Yes</strong></td><td>A random persona opens with a short first line.</td></tr>
                     <tr><td>Condition (Admin)</td><td><strong>On</strong></td><td>Match by Qualtrics <code>condition</code>; see <a href="#example-condition">Example condition</a>.</td></tr>
                     <tr><td>Qualtrics <code>condition</code></td><td><em>You set in survey</em></td><td>Not fixed by ★ Example — e.g. <code>pilot</code> for everyone, or <code>cond1_a</code> / <code>cond2</code> for disclosure.</td></tr>
@@ -337,7 +394,7 @@
                     <tr><td><code>session_id</code></td><td>In (iframe URL)</td><td>Fixed in the HTML snippet from Admin (e.g. <code>SES-…</code>).</td></tr>
                     <tr><td><code>participant_id</code></td><td>In (iframe URL)</td><td>Use <code>${e://Field/ResponseID}</code> or your participant key.</td></tr>
                     <tr><td><code>condition</code></td><td>In (iframe URL)</td><td>Required when <strong>Condition</strong> is On (★ Example default). Set in Qualtrics Embedded Data; iframe uses <code>${e://Field/condition}</code>. Same value → same match queue. ★ Example does not pick the value for you — see <a href="#example-condition">Example condition</a> (pilot: <code>pilot</code> or blank → <code>_default</code>; disclosure: <code>cond1_a</code>, <code>cond1_b</code>, <code>cond2</code>, <code>control</code>, or <code>cond1</code>).</td></tr>
-                    <tr><td><code>transcript</code></td><td>Out (saved)</td><td>Written by the chat app when the session ends (~240k char cap).</td></tr>
+                    <tr><td><code>transcript</code></td><td>Out (saved)</td><td>Written when the session ends (~240k char cap). Content is <strong>transcript</strong> or <strong>full</strong> per Admin/Dashboard <strong>Qualtrics log content</strong> (not a separate Qualtrics field).</td></tr>
                     <tr><td><code>chat_status</code></td><td>Out (saved)</td><td><code>completed_full</code>, <code>left_early</code>, <code>no_messages</code>, or <code>never_joined</code>.</td></tr>
                 </tbody>
             </table>
@@ -353,15 +410,66 @@
             <div class="note">Production embed URL is typically <code>https://group.xjhuang.com</code>. Qualtrics cannot load <code>localhost</code>.</div>
         </div>
 
+        <div class="section" id="read-only">
+            <h2>Read-only after session ends</h2>
+            <p>When the scheduled <strong>chat duration</strong> expires, the participant embed switches to <strong>read-only</strong>: the input is disabled, the header shows <strong>Session ended</strong>, and prior messages stay visible. Participants can still scroll the transcript; they cannot send new lines.</p>
+            <ul>
+                <li><strong>Qualtrics On</strong> — the app still writes <code>transcript</code> and <code>chat_status</code> (and may auto-advance the survey when status is <code>completed_full</code>).</li>
+                <li><strong>Next before time is up</strong> — handoff runs on leave; status is usually <code>left_early</code> or <code>no_messages</code>, not read-only browsing for the full duration.</li>
+                <li><strong>API spend cap hit</strong> — bots stop generating new replies when a group reaches its cap; humans can usually still type until duration ends (see <a href="#usage-cost">Usage &amp; cost</a>).</li>
+            </ul>
+            <p>Dashboard <strong>Monitor</strong> remains a separate read-only view for researchers at any time.</p>
+        </div>
+
         <div class="section" id="dashboard">
             <h2>Dashboard</h2>
+            <p>Top metrics include <strong>API spend (all)</strong> and <strong>This hour</strong> — rolling estimates across all tracked LLM calls.</p>
             <ul>
-                <li><strong>Sessions</strong> — join a queue for testing, open published session settings.</li>
-                <li><strong>Monitor</strong> — read-only live view of active rooms.</li>
+                <li><strong>Sessions</strong> — join a queue for testing, open published session settings (including per-session <strong>API cap / group</strong> in USD).</li>
+                <li><strong>Monitor</strong> — read-only live view of active rooms; each row shows spend vs cap (<code>$spent / $cap</code>).</li>
                 <li><strong>Export</strong> — download activity logs or chat history as CSV (optional; Qualtrics Out fields are the primary handoff when integration is On).</li>
+                <li><strong>Usage &amp; cost</strong> — see <a href="#usage-cost">Usage &amp; cost</a>.</li>
             </ul>
             <h3>Modify a published session</h3>
-            <p>Select a session → <strong>Edit</strong> → change timing, session mode, reply-on-any / chain depth, or persona JSON → <strong>Save</strong>. Use Admin <strong>★ Example</strong> when creating a new session; for existing sessions, align fields with <a href="#recommended-defaults">Recommended defaults</a>.</p>
+            <p>Select a session → <strong>Edit</strong> → change fields → <strong>Save</strong> (read-only until you click Edit). You can adjust timing, session mode (1–4), mode 4 jitter/rethink/refresh, Qualtrics log mode, reply-on-any / chain depth, mentions, API cap per group, and persona JSON. Use Admin <strong>★ Example</strong> when creating a new session.</p>
+            <div class="note">
+                <strong>What updates immediately vs later:</strong> API cap per group and session mode apply to active rooms after Save. <strong>Min / max humans</strong> only affects <em>new</em> joiners (people already waiting in a forming group stay put). <strong>Persona JSON</strong> affects the next bot reply. <strong>Condition On</strong> always forces stratified assignment (Assignment dropdown is locked).
+            </div>
+            <p>Researchers see only their own sessions; super-admin sees all. Sessions without an owner (legacy) can be claimed on first Save by the logged-in researcher.</p>
+        </div>
+
+        <div class="section" id="usage-cost">
+            <h2>Usage &amp; cost</h2>
+            <p>Dashboard → <strong>Usage &amp; cost</strong> tab shows estimated spend from token usage (rates ~10% above public list for DeepSeek and OpenAI models). Data is stored under <code>config/usage_ledger.jsonl</code> and rollups in <code>config/usage_rollups.json</code>.</p>
+            <h3>Spend caps (two layers)</h3>
+            <p>API spend is limited at <strong>two levels</strong> — whichever is hit first stops new bot calls for that scope:</p>
+            <ol>
+                <li><strong>Per chat group</strong> — default <strong>$8</strong> per <code>GRP-…</code> room (Admin <strong>API cap / group</strong> or <code>GROUP_SPEND_CAP_USD</code> in <code>.env</code>).</li>
+                <li><strong>Per researcher account</strong> — default <strong>$200</strong> total across all sessions that account created (<code>ACCOUNT_SPEND_CAP_USD</code> in <code>.env</code>; super-admin can change per person on <strong>Researchers</strong>).</li>
+            </ol>
+            <div class="note">Example: one group may stop bots at $8 while the researcher still has budget left; many groups in one study share the same $200 account total. The ACTR2026 super-admin login is not subject to the $200 account cap.</div>
+            <table class="param-table">
+                <thead><tr><th>Setting</th><th>Where</th><th>Default</th></tr></thead>
+                <tbody>
+                    <tr><td>API cap / group</td><td>Dashboard → session Edit</td><td><strong>$8</strong> per chat group</td></tr>
+                    <tr><td><code>GROUP_SPEND_CAP_USD</code></td><td>Server <code>.env</code></td><td>Default per-group cap for new sessions</td></tr>
+                    <tr><td>Researcher budget</td><td><code>/register</code> + Researchers (admin)</td><td><strong>$200</strong> per registered email</td></tr>
+                    <tr><td><code>ACCOUNT_SPEND_CAP_USD</code></td><td>Server <code>.env</code></td><td>Default budget for new registrations</td></tr>
+                    <tr><td><code>SESSION_SPEND_CAP_USD</code></td><td>Server <code>.env</code></td><td>Optional cap across all groups in one session</td></tr>
+                </tbody>
+            </table>
+            <p>When a cap is reached, further <strong>bot</strong> API calls are blocked. Humans can usually still type until chat duration ends unless the room is paused.</p>
+            <h3>Email alerts (optional)</h3>
+            <p>Requires SMTP in <code>.env</code> (<code>SMTP_HOST</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code>, <code>SMTP_FROM</code>). All alert emails use <strong>fixed English</strong> subject lines and body text.</p>
+            <table class="param-table">
+                <thead><tr><th>Alert</th><th>Who receives</th><th>When</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Level 1 — budget warning</strong></td><td>Session owner’s <strong>registration email</strong> + <code>ALERT_EMAIL_TO</code> mail group</td><td>Spend ≥ <strong>80%</strong> of cap (<code>ALERT_CAP_WARN_RATIO</code>, default 0.8). Once per group / session / account until state resets.</td></tr>
+                    <tr><td><strong>Level 2 — cap reached</strong></td><td>Same recipients</td><td>Spend ≥ <strong>100%</strong> of cap (bot API calls blocked). Once per scope.</td></tr>
+                    <tr><td>Burst / hourly (ops)</td><td><code>ALERT_EMAIL_TO</code> only</td><td>Hour ≥ <code>ALERT_HOURLY_SPEND_USD</code> (default <strong>$40</strong>) or one group ≥ <code>ALERT_GROUP_BURST_USD</code> (default <strong>$15</strong>); cooldown <code>ALERT_COOLDOWN_MINUTES</code>.</td></tr>
+                </tbody>
+            </table>
+            <p>Caps checked after each API call: <strong>per chat group</strong> ($8 default), <strong>per researcher account</strong> ($200 default), and optional <code>SESSION_SPEND_CAP_USD</code> across all groups in one session.</p>
         </div>
 
         <div class="section" id="faq">
@@ -369,7 +477,9 @@
             <h3>How do I watch without joining?</h3>
             <p>Dashboard → Monitor → select a room.</p>
             <h3>Can I change settings after create?</h3>
-            <p>Yes, while the survey window is open: Dashboard → Sessions → your session → Edit.</p>
+            <p>Yes, while the survey window is open: Dashboard → Published sessions → select → <strong>Edit</strong> → <strong>Save</strong>. If Save fails, read the toast message (auth, validation, or disk error).</p>
+            <h3>What is session mode 4 vs mode 1?</h3>
+            <p>Mode 1 queues bots serially (one room pipeline). Mode 4 runs eligible bots in parallel with refresh-on-peer — see <a href="#session-mode-4">Session mode 4</a>.</p>
             <h3>Where is data stored?</h3>
             <p>Local JSON under <code>db/</code> and <code>activity_logs/</code>, or MongoDB if <code>MONGO_URL</code> is set.</p>
             <h3>Why do bots feel robotic or talk too much?</h3>
@@ -378,6 +488,12 @@
             <p>No special label is shown to the model — everyone is a display name in the transcript. For human-led flow, keep <strong>Reply on any message Off</strong>.</p>
             <h3>What is the difference between session mode and persona mode?</h3>
             <p>Session mode = who <em>may</em> reply to a message. Persona mode = whether <em>this</em> persona actually replies when eligible.</p>
+            <h3>Which API key do I need?</h3>
+            <p><code>DEEPSEEK_API_KEY</code> for ★ Example (DeepSeek personas). Add <code>OPENAI_API_KEY</code> only for personas set to a GPT model — see <a href="#llm-models">LLM models</a>.</p>
+            <h3>Why did bots stop talking mid-chat?</h3>
+            <p>Check Monitor (<code>$spent / $cap</code> per room) and <strong>Your API budget</strong> or <strong>Account</strong>. You may have hit the <strong>$8/group</strong> limit or your <strong>$200 account</strong> total. Super-admin can raise per-group cap or per-researcher budget on <strong>Researchers</strong>.</p>
+            <h3>Can participants still read chat after time is up?</h3>
+            <p>Yes — the Qualtrics embed becomes <a href="#read-only">read-only</a> until they click Next or leave the page.</p>
             <h3>Questions?</h3>
             <p>If you have any questions, please contact ACTRLAB Research Assistant Xinjie HUANG at <a href="mailto:xinjiehuang@ust.hk">xinjiehuang@ust.hk</a>.</p>
         </div>

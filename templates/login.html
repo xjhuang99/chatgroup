@@ -93,7 +93,7 @@
 <body>
     <div class="login-card">
         <div class="logo">ACTR</div>
-        <div class="subtitle">Admin access</div>
+        <div class="subtitle">Sign in (researcher account or super-admin)</div>
 
         <div id="error-msg" class="error-msg"></div>
 
@@ -108,27 +108,37 @@
             </div>
             <button type="submit" class="btn-login">Sign in</button>
         </form>
+        <p style="text-align:center;margin-top:18px;font-size:0.88rem;">
+            <a href="/register" style="color:var(--orange-dark);font-weight:600;">Create researcher account</a>
+        </p>
     </div>
 
     <script>
-        const VALID_USERNAME = 'ACTR2026';
-        const VALID_PASSWORD = 'ACTR2026';
-
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('error-msg');
 
-            if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-                document.cookie = 'actr_auth=authenticated; path=/; max-age=86400; SameSite=Lax';
-                sessionStorage.setItem('actr_auth', 'authenticated');
-                const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
-                window.location.href = redirect;
-            } else {
-                errorEl.textContent = 'Invalid username or password.';
-                errorEl.style.display = 'block';
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ username, password }),
+                });
+                if (res.ok) {
+                    sessionStorage.setItem('actr_admin', '1');
+                    const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
+                    window.location.href = redirect;
+                    return;
+                }
+                const data = await res.json().catch(() => ({}));
+                errorEl.textContent = data.detail || 'Invalid username or password.';
+            } catch (err) {
+                errorEl.textContent = 'Could not reach server. Try again.';
             }
+            errorEl.style.display = 'block';
         });
     </script>
 </body>

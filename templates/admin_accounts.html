@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researchers — ACTR Admin</title>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        body { line-height: 1.6; }
+        .wrap { max-width: 1100px; margin: calc(var(--header-height) + 16px) auto 48px; padding: 0 20px; }
+        .card { background: white; border-radius: 14px; padding: 24px 28px; border: 1px solid var(--gray-300); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        h1 { font-size: var(--fs-lg); color: var(--orange-dark); margin-bottom: 6px; }
+        .sub { color: var(--gray-700); font-size: var(--fs-md); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: var(--fs-md); }
+        th { text-align: left; padding: 10px 8px; border-bottom: 2px solid #e2e8f0; font-size: var(--fs-sm); text-transform: uppercase; color: var(--gray-500); }
+        td { padding: 10px 8px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+        .cap-input { width: 88px; padding: 6px 8px; border: 1px solid var(--gray-300); border-radius: 6px; }
+        .btn { padding: 6px 12px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer; font-size: var(--fs-sm); }
+        .btn-save { background: var(--orange); color: white; }
+        .btn-save:hover { opacity: 0.9; }
+        .spent-warn { color: #b45309; font-weight: 700; }
+        .spent-ok { color: #047857; }
+        .empty { padding: 24px; text-align: center; color: var(--gray-500); }
+        .note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 14px; font-size: var(--fs-md); color: #7c2d12; margin-bottom: 18px; }
+    </style>
+</head>
+<body>
+<header class="nav-header">
+    <a href="/" class="nav-logo">ACTR</a>
+    <nav class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/admin">Admin</a>
+        <a href="/admin/accounts" class="active">Researchers</a>
+        <a href="/manual">Manual</a>
+    </nav>
+</header>
+
+<div class="wrap">
+    <div class="card">
+        <h1>Researcher accounts</h1>
+        <p class="sub">Super-admin view: registration, API spend, and per-person budget (default $<span id="defaultCap">—</span>).</p>
+        <div class="note">Each registered email has its own API budget. Sessions they create count toward that total. The ACTR2026 super-admin login is separate and is not listed here.</div>
+        <div id="tableWrap"><p class="empty">Loading…</p></div>
+    </div>
+</div>
+
+<script>
+async function loadAccounts() {
+    const wrap = document.getElementById('tableWrap');
+    try {
+        const res = await fetch('/api/admin/accounts', { credentials: 'same-origin' });
+        if (res.status === 401) {
+            location.href = '/login?redirect=/admin/accounts';
+            return;
+        }
+        const data = await res.json();
+        document.getElementById('defaultCap').textContent = data.default_cap_usd;
+        const rows = data.accounts || [];
+        if (!rows.length) {
+            wrap.innerHTML = '<p class="empty">No researcher accounts yet. They can register at <a href="/register">/register</a>.</p>';
+            return;
+        }
+        const body = rows.map(a => {
+            const cap = a.spend_cap_usd ?? data.default_cap_usd;
+            const spent = a.spend_usd ?? 0;
+            const pct = cap > 0 ? (spent / cap) * 100 : 0;
+            const cls = pct >= 90 ? 'spent-warn' : 'spent-ok';
+            return `<tr>
+                <td><strong>${a.username}</strong><br><span style="font-size:0.82rem;color:#666">${a.email}</span></td>
+                <td style="font-size:0.82rem">${a.account_id}</td>
+                <td>${(a.created_at || '—').slice(0, 10)}</td>
+                <td>${a.session_count ?? 0}</td>
+                <td class="${cls}">$${spent.toFixed(2)}</td>
+                <td>
+                    <input type="number" class="cap-input" min="1" step="1" value="${cap}"
+                           data-id="${a.account_id}" id="cap-${a.account_id}">
+                </td>
+                <td>$${(a.spend_remaining_usd ?? 0).toFixed(2)}</td>
+                <td><button type="button" class="btn btn-save" onclick="saveCap('${a.account_id}')">Save</button></td>
+            </tr>`;
+        }).join('');
+        wrap.innerHTML = `<table>
+            <thead><tr>
+                <th>User</th><th>ID</th><th>Registered</th><th>Sessions</th>
+                <th>Spent</th><th>Budget (USD)</th><th>Left</th><th></th>
+            </tr></thead>
+            <tbody>${body}</tbody>
+        </table>`;
+    } catch (e) {
+        wrap.innerHTML = '<p class="empty">Failed to load accounts.</p>';
+    }
+}
+
+async function saveCap(accountId) {
+    const input = document.getElementById('cap-' + accountId);
+    const cap = parseFloat(input.value);
+    if (!cap || cap < 1) {
+        alert('Budget must be at least $1');
+        return;
+    }
+    const res = await fetch('/api/admin/accounts/' + encodeURIComponent(accountId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ spend_cap_usd: cap }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        alert(data.detail || 'Update failed');
+        return;
+    }
+    loadAccounts();
+}
+
+loadAccounts();
+setInterval(loadAccounts, 15000);
+</script>
+</body>
+</html>

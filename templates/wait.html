@@ -130,11 +130,12 @@
     <script>
         /* ========================================
            Wait / Matching Page
-           URL params: ?uid=...&session_id=...
+           URL params: ?uid=...&session_id=...&condition=... (optional)
            ======================================== */
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get('uid') || 'user_' + Math.floor(Math.random() * 100000);
         const sessionId = urlParams.get('session_id') || null;
+        const condition = urlParams.get('condition') || urlParams.get('cond') || '';
 
         document.getElementById('uid-display').textContent = `USER ID: ${uid}`;
 
@@ -178,20 +179,32 @@
         }
 
         /* Poll the match endpoint every 2.5 seconds */
+        function matchQueryString() {
+            let q = `session_id=${encodeURIComponent(sessionId)}&uid=${encodeURIComponent(uid)}`;
+            if (condition) q += `&condition=${encodeURIComponent(condition)}`;
+            return q;
+        }
+
         async function checkMatch() {
             if (!sessionId) return;
             try {
-                const res = await fetch(`/api/match?session_id=${encodeURIComponent(sessionId)}&uid=${encodeURIComponent(uid)}`);
+                const res = await fetch(`/api/match?${matchQueryString()}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
 
+                if (data.status === 'session_closed' || data.status === 'session_not_found') {
+                    clearInterval(pollingInterval);
+                    document.getElementById('status-text').textContent = data.message || 'Session unavailable.';
+                    log(data.message || 'Session unavailable.');
+                    return;
+                }
                 if (data.status === "matched") {
                     log("✅ MATCH FOUND!");
                     log("Establishing secure WebSocket...");
                     clearInterval(pollingInterval);
-                    setTimeout(() => {
-                        window.location.href = `/chat/${encodeURIComponent(data.session_id)}/${encodeURIComponent(data.group_id)}?uid=${encodeURIComponent(uid)}`;
-                    }, 1000);
+                    let chatUrl = `/chat/${encodeURIComponent(data.session_id)}/${encodeURIComponent(data.group_id)}?uid=${encodeURIComponent(uid)}`;
+                    if (condition) chatUrl += `&condition=${encodeURIComponent(condition)}`;
+                    setTimeout(() => { window.location.href = chatUrl; }, 1000);
                 } else {
                     if (Math.random() > 0.7) log("Searching matching pool...");
                 }
@@ -203,10 +216,12 @@
         async function leaveQueue() {
             if (sessionId) {
                 try {
-                    await fetch(`/api/leave?session_id=${encodeURIComponent(sessionId)}&uid=${encodeURIComponent(uid)}`);
+                    let leaveUrl = `/api/leave?session_id=${encodeURIComponent(sessionId)}&uid=${encodeURIComponent(uid)}`;
+                    if (condition) leaveUrl += `&condition=${encodeURIComponent(condition)}`;
+                    await fetch(leaveUrl);
                 } catch (e) { /* ignore */ }
             }
-            window.location.href = '/';
+            window.location.href = '/join';
         }
 
         /* Init */
@@ -217,6 +232,7 @@
                 return;
             }
             log(`Initializing matching for session: ${sessionId}`);
+            if (condition) log(`Condition: ${condition}`);
             await loadBotData();
             pollingInterval = setInterval(checkMatch, 2500);
             log("Polling server for available pairs...");

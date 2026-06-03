@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account — ACTR</title>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        body { line-height: 1.6; }
+        .wrap { max-width: 520px; margin: calc(var(--header-height) + 20px) auto 40px; padding: 0 20px; }
+        .card { background: white; border-radius: 14px; padding: 28px; border: 1px solid var(--gray-300); }
+        h1 { font-size: var(--fs-lg); color: var(--orange-dark); margin-bottom: 8px; }
+        .meta { font-size: var(--fs-md); color: var(--gray-700); margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; }
+        input { width: 100%; padding: 10px 12px; border: 2px solid #e8e8e8; border-radius: 8px; }
+        .btn { padding: 11px 20px; border: none; border-radius: 8px; background: var(--primary-gradient); color: white; font-weight: 700; cursor: pointer; }
+        .msg { margin-top: 12px; font-size: 0.88rem; display: none; }
+        .msg.err { color: #b42318; }
+        .msg.ok { color: #047857; }
+    </style>
+</head>
+<body>
+<header class="nav-header">
+    <a href="/" class="nav-logo">ACTR</a>
+    <nav class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/admin">Admin</a>
+        <a href="/account" class="active">Account</a>
+        <a href="/manual">Manual</a>
+    </nav>
+</header>
+<div class="wrap">
+    <div class="card">
+        <h1>Your account</h1>
+        <p class="meta" id="acctMeta">Loading…</p>
+        <form id="profileForm">
+            <div class="form-group">
+                <label>New username</label>
+                <input type="text" id="newUsername" pattern="[a-zA-Z0-9._-]{3,32}" placeholder="Leave blank to keep current">
+            </div>
+            <div class="form-group">
+                <label>New password</label>
+                <input type="password" id="newPassword" minlength="8" placeholder="Leave blank to keep current">
+            </div>
+            <div class="form-group">
+                <label>Current password (required)</label>
+                <input type="password" id="currentPassword" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn">Save changes</button>
+        </form>
+        <p id="msg" class="msg"></p>
+    </div>
+</div>
+<script>
+async function loadMe() {
+    const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    const d = await r.json();
+    if (!d.authenticated) {
+        location.href = '/login?redirect=/account';
+        return;
+    }
+    if (d.type === 'admin') {
+        document.getElementById('acctMeta').textContent = 'Signed in as super-admin (' + d.username + '). Researcher profile is for registered accounts only.';
+        document.getElementById('profileForm').style.display = 'none';
+        return;
+    }
+    const spent = d.spend_usd != null ? d.spend_usd.toFixed(2) : '0';
+    const cap = d.spend_cap_usd != null ? d.spend_cap_usd : 200;
+    const left = d.spend_remaining_usd != null ? d.spend_remaining_usd.toFixed(2) : cap;
+    document.getElementById('acctMeta').innerHTML =
+        '<strong>' + d.username + '</strong> · ' + d.email + '<br>' +
+        'API spend: $' + spent + ' / $' + cap + ' (remaining $' + left + ')';
+    document.getElementById('newUsername').placeholder = d.username;
+}
+document.getElementById('profileForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg');
+    msg.className = 'msg';
+    msg.style.display = 'none';
+    const body = { current_password: document.getElementById('currentPassword').value };
+    const u = document.getElementById('newUsername').value.trim();
+    const p = document.getElementById('newPassword').value;
+    if (u) body.username = u;
+    if (p) body.new_password = p;
+    if (!body.username && !body.new_password) {
+        msg.textContent = 'Enter a new username and/or password.';
+        msg.classList.add('err');
+        msg.style.display = 'block';
+        return;
+    }
+    const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        msg.textContent = data.detail || 'Update failed';
+        msg.classList.add('err');
+        msg.style.display = 'block';
+        return;
+    }
+    msg.textContent = 'Saved. Use new credentials next time if you changed username or password.';
+    msg.classList.add('ok');
+    msg.style.display = 'block';
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    loadMe();
+};
+loadMe();
+</script>
+</body>
+</html>
