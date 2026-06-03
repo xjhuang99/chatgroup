@@ -8,12 +8,8 @@
     <link rel="stylesheet" href="/static/theme.css">
     <style>
         #homeBody {
-            --home-body: 1rem;
-            --home-lead: 1.0625rem;
-            --home-meta: 0.9375rem;
             line-height: 1.65;
-            font-size: var(--home-body);
-            font-weight: 400;
+            font-size: 1rem;
             transition: font-family 0.15s;
         }
         #homeBody.lang-en {
@@ -24,10 +20,6 @@
         }
         #homeBody.lang-zh-Hant {
             font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
-        }
-        #homeBody .page,
-        #homeBody .page * {
-            font-family: inherit;
         }
         .page {
             max-width: 920px;
@@ -81,25 +73,26 @@
             box-shadow: var(--shadow-md);
         }
         .hero-text { flex: 1; min-width: 240px; }
-        .hero-names { margin-bottom: 10px; }
-        .hero h1,
-        .hero .name-alt {
-            font-size: var(--home-lead);
-            font-weight: 700;
-            line-height: 1.45;
-            letter-spacing: 0.01em;
-            margin: 0;
+        .hero-names {
+            min-height: 3.4rem;
+            margin-bottom: 10px;
         }
         .hero h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
             color: var(--gray-900);
-            margin-bottom: 2px;
+            line-height: 1.3;
+            margin: 0 0 4px;
         }
         .hero .name-alt {
-            color: var(--gray-700);
+            font-size: 1rem;
+            color: var(--gray-500);
             font-weight: 600;
+            line-height: 1.35;
+            margin: 0;
         }
         .hero .lab-line {
-            font-size: var(--home-body);
+            font-size: 1rem;
             color: var(--orange-dark);
             font-weight: 700;
             margin-bottom: 12px;
@@ -108,7 +101,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px 16px;
-            font-size: var(--home-body);
+            font-size: 0.9375rem;
             color: var(--gray-700);
         }
         .contact a { color: var(--orange-dark); font-weight: 600; text-decoration: none; }
@@ -122,20 +115,22 @@
             box-shadow: var(--shadow-sm);
         }
         .app-guide h2 {
-            font-size: var(--home-lead);
-            font-weight: 700;
+            font-size: 1.0625rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             color: var(--orange-dark);
             margin-bottom: 20px;
         }
         .app-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 16px;
         }
         .app-card {
-            display: flex;
-            flex-direction: column;
-            min-height: 180px;
+            display: grid;
+            grid-template-rows: auto auto 1fr auto auto;
+            height: 220px;
             padding: 20px 22px 18px;
             border-radius: 12px;
             border: 2px solid var(--gray-300);
@@ -143,36 +138,42 @@
             text-decoration: none;
             color: inherit;
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+            overflow: hidden;
         }
         a.app-card:hover {
             border-color: var(--orange);
             transform: translateY(-3px);
             box-shadow: 0 8px 24px rgba(230, 126, 34, 0.18);
         }
-        .app-card .app-icon { font-size: 1.5rem; margin-bottom: 10px; }
+        .app-card .app-icon { font-size: 2rem; margin-bottom: 10px; line-height: 1; }
         .app-card .app-title {
-            font-size: var(--home-lead);
-            font-weight: 700;
+            font-size: 1.1rem;
+            font-weight: 800;
             color: var(--gray-900);
             margin-bottom: 8px;
+            min-height: 2.6rem;
+            line-height: 1.3;
         }
         .app-card .app-desc {
-            flex: 1;
-            font-size: var(--home-body);
+            font-size: 0.9375rem;
             color: var(--gray-700);
             line-height: 1.5;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
+            min-height: 4.5rem;
+            overflow: hidden;
         }
         .app-card .app-url {
-            font-size: var(--home-meta);
+            font-size: 0.8125rem;
             color: var(--gray-500);
             word-break: break-all;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            line-height: 1.35;
         }
         .app-card .app-cta {
-            font-size: var(--home-body);
-            font-weight: 700;
+            font-size: 0.9375rem;
+            font-weight: 800;
             color: var(--orange-dark);
+            line-height: 1.3;
         }
         a.app-card:hover .app-cta { text-decoration: underline; }
         .section {
@@ -184,14 +185,16 @@
             box-shadow: var(--shadow-sm);
         }
         .section h2 {
-            font-size: var(--home-lead);
-            font-weight: 700;
+            font-size: 1.0625rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             color: var(--orange-dark);
             margin-bottom: 14px;
             padding-bottom: 8px;
             border-bottom: 2px solid var(--gray-100);
         }
-        .toc-jump { font-size: var(--home-body); margin-bottom: 16px; }
+        .toc-jump { font-size: 0.9375rem; margin-bottom: 16px; }
         .toc-jump a {
             color: var(--orange-dark);
             font-weight: 600;
@@ -206,15 +209,21 @@
             gap: 4px 12px;
             margin-bottom: 4px;
         }
-        .entry-title { font-weight: 700; font-size: var(--home-body); color: var(--gray-900); }
-        .entry-meta { font-size: var(--home-meta); color: var(--gray-500); font-style: italic; }
-        .entry-sub { font-size: var(--home-body); color: var(--gray-700); margin-bottom: 6px; }
-        ul.bullets { padding-left: 1.25rem; margin: 0; font-size: var(--home-body); color: #444; }
+        .entry-title { font-weight: 800; font-size: 1rem; color: var(--gray-900); }
+        .entry-meta { font-size: 0.9375rem; color: var(--gray-500); font-style: italic; }
+        .entry-sub { font-size: 1rem; color: var(--gray-700); margin-bottom: 6px; }
+        ul.bullets { padding-left: 1.25rem; margin: 0; font-size: 1rem; color: #444; }
         ul.bullets li { margin-bottom: 6px; }
         ul.bullets a { color: var(--orange-dark); font-weight: 600; }
-        .research-title { font-weight: 700; font-size: var(--home-body); }
-        .research-status { font-size: var(--home-meta); color: var(--gray-500); font-style: italic; }
-        #interests p { font-size: var(--home-body); color: var(--gray-700); }
+        .research-title { font-weight: 800; font-size: 1rem; }
+        .research-status { font-size: 0.9375rem; color: var(--gray-500); font-style: italic; }
+        #interests p { font-size: 1rem; color: var(--gray-700); }
+        @media (max-width: 900px) {
+            .app-grid { grid-template-columns: 1fr; }
+            .app-card { height: auto; min-height: 200px; }
+            .app-card .app-desc { min-height: 0; }
+            .app-card .app-title { min-height: 0; }
+        }
         @media (max-width: 720px) {
             .page { margin-top: 16px; }
             .hero { justify-content: center; text-align: center; }
@@ -304,7 +313,7 @@
                 <span class="entry-title" data-i18n="edu.ic.org">Imperial College London</span>
                 <span class="entry-meta" data-i18n="edu.ic.date">Oct 2020 — Oct 2021</span>
             </div>
-            <div class="entry-sub" data-i18n="edu.ic.degree">MSc Communications and Signal Processing (Merit)</div>
+            <div class="entry-sub" data-i18n="edu.ic.degree">MSc Communications and Signal Processing</div>
             <ul class="bullets"><li data-i18n="edu.ic.b1">Thesis: Doppler radar signal processing (MATLAB + Microwave Studio).</li></ul>
         </div>
         <div class="entry">
@@ -312,7 +321,7 @@
                 <span class="entry-title" data-i18n="edu.leeds.org">University of Leeds</span>
                 <span class="entry-meta" data-i18n="edu.leeds.date">Sep 2016 — Jul 2020</span>
             </div>
-            <div class="entry-sub" data-i18n="edu.leeds.degree">BEng EEE (First Class); dual degree with Southwest Jiaotong University</div>
+            <div class="entry-sub" data-i18n="edu.leeds.degree">BEng EEE; dual degree with Southwest Jiaotong University</div>
             <ul class="bullets"><li data-i18n="edu.leeds.b1">Research: machine translation evolution (rule-based to Transformer).</li></ul>
         </div>
     </section>
@@ -449,10 +458,10 @@ const HOME_I18N = {
         'edu.hkust.org': 'Hong Kong University of Science and Technology', 'edu.hkust.date': '2025 — Present',
         'edu.hkust.degree': 'Auditing · Organizational Behavior (OB), Behavioral Science, and Negotiation',
         'edu.ic.org': 'Imperial College London', 'edu.ic.date': 'Oct 2020 — Oct 2021',
-        'edu.ic.degree': 'London, UK · MSc Communications and Signal Processing (Merit)',
+        'edu.ic.degree': 'London, UK · MSc Communications and Signal Processing',
         'edu.ic.b1': 'Thesis: Doppler radar signal processing (MATLAB + Microwave Studio).',
         'edu.leeds.org': 'University of Leeds', 'edu.leeds.date': 'Sep 2016 — Jul 2020',
-        'edu.leeds.degree': 'Leeds, UK · BEng EEE (First Class); dual degree with Southwest Jiaotong University',
+        'edu.leeds.degree': 'Leeds, UK · BEng EEE; dual degree with Southwest Jiaotong University',
         'edu.leeds.b1': 'Research: machine translation evolution (rule-based to Transformer).',
         'pres.p1': 'HKUST CEI Workshop: Reimagining Education (Nov 2025).',
         'pres.p2': 'HKUST CEI Workshop: AI Sandbox for Educators (Apr 2025).',
@@ -506,10 +515,10 @@ const HOME_I18N = {
         'edu.hkust.org': '香港科技大学', 'edu.hkust.date': '2025年 — 至今',
         'edu.hkust.degree': '旁听 · 组织行为学（OB）、行为科学与谈判',
         'edu.ic.org': '帝国理工学院', 'edu.ic.date': '2020年10月 — 2021年10月',
-        'edu.ic.degree': '伦敦 · 通信与信号处理硕士（Merit）',
+        'edu.ic.degree': '伦敦 · 通信与信号处理硕士',
         'edu.ic.b1': '论文：多普勒雷达信号处理（MATLAB + Microwave Studio）。',
         'edu.leeds.org': '利兹大学', 'edu.leeds.date': '2016年9月 — 2020年7月',
-        'edu.leeds.degree': '电子电气工程学士（一等）；西南交通大学双学位',
+        'edu.leeds.degree': '电子电气工程学士；西南交通大学双学位',
         'edu.leeds.b1': '研究：机器翻译演进（规则系统至 Transformer）。',
         'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
         'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
@@ -563,10 +572,10 @@ const HOME_I18N = {
         'edu.hkust.org': '香港科技大學', 'edu.hkust.date': '2025年 — 至今',
         'edu.hkust.degree': '旁聽 · 組織行為學（OB）、行為科學與談判',
         'edu.ic.org': '帝國理工學院', 'edu.ic.date': '2020年10月 — 2021年10月',
-        'edu.ic.degree': '倫敦 · 通訊與訊號處理碩士（Merit）',
+        'edu.ic.degree': '倫敦 · 通訊與訊號處理碩士',
         'edu.ic.b1': '論文：都卜勒雷達訊號處理（MATLAB + Microwave Studio）。',
         'edu.leeds.org': '利茲大學', 'edu.leeds.date': '2016年9月 — 2020年7月',
-        'edu.leeds.degree': '電子電氣工程學士（一等）；西南交通大學雙學位',
+        'edu.leeds.degree': '電子電氣工程學士；西南交通大學雙學位',
         'edu.leeds.b1': '研究：機器翻譯演進（規則系統至 Transformer）。',
         'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
         'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
