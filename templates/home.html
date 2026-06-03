@@ -19,14 +19,17 @@
         }
         .page {
             max-width: 920px;
-            margin: calc(var(--header-height) + 14px) auto 48px;
+            margin: 28px auto 48px;
             padding: 0 20px;
+        }
+        .page-top {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
         }
         .lang-switch {
             display: flex;
             gap: 4px;
-            margin-left: auto;
-            flex-shrink: 0;
         }
         .lang-switch button {
             padding: 5px 10px;
@@ -44,10 +47,6 @@
             border-color: var(--orange);
             color: var(--orange-dark);
         }
-        .nav-header { flex-wrap: wrap; gap: 12px; }
-        .nav-header .nav-logo { font-size: 1.15rem; }
-        .nav-header .nav-links a.nav-actr { color: var(--gray-700); }
-        .nav-header .nav-links a.nav-actr:hover { color: var(--orange-dark); }
         .hero {
             display: flex;
             flex-wrap: wrap;
@@ -92,12 +91,6 @@
             font-size: var(--fs-md);
             color: var(--gray-700);
             margin-bottom: 12px;
-        }
-        .hero .site-note {
-            font-size: var(--fs-sm);
-            color: var(--gray-500);
-            margin-top: 10px;
-            max-width: 36em;
         }
         .contact {
             display: flex;
@@ -218,34 +211,23 @@
         ul.bullets a { color: var(--orange-dark); font-weight: 600; }
         .research-title { font-weight: 800; }
         .research-status { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
-        .note { font-size: var(--fs-sm); color: var(--gray-500); margin-top: 16px; text-align: center; }
         @media (max-width: 720px) {
-            .lang-switch { margin-left: 0; width: 100%; justify-content: flex-end; }
+            .page { margin-top: 16px; }
             .hero { justify-content: center; text-align: center; }
             .contact { justify-content: center; }
-            .hero .site-note { margin-left: auto; margin-right: auto; }
         }
     </style>
 </head>
-<body class="has-top-nav lang-en" id="homeBody">
-
-<header class="nav-header">
-    <a href="https://xjhuang.com/home" class="nav-logo">Monica Huang</a>
-    <nav class="nav-links">
-        <a href="https://xjhuang.com/home" class="active" data-i18n="nav.home">Home</a>
-        <a href="https://group.xjhuang.com/" class="nav-actr" data-i18n="nav.dashboard">Dashboard</a>
-        <a href="https://group.xjhuang.com/admin" class="nav-actr" data-i18n="nav.admin">Admin</a>
-        <a href="https://group.xjhuang.com/manual" class="nav-actr" data-i18n="nav.manual">Manual</a>
-        <a href="https://group.xjhuang.com/login" class="nav-actr" data-i18n="nav.login">Login</a>
-    </nav>
-    <div class="lang-switch" role="group" aria-label="Language">
-        <button type="button" data-lang="zh-Hans">简体</button>
-        <button type="button" data-lang="en" class="active">EN</button>
-        <button type="button" data-lang="zh-Hant">繁體</button>
-    </div>
-</header>
+<body class="lang-en" id="homeBody">
 
 <main class="page">
+    <div class="page-top">
+        <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" data-lang="zh-Hans">简体</button>
+            <button type="button" data-lang="en" class="active">EN</button>
+            <button type="button" data-lang="zh-Hant">繁體</button>
+        </div>
+    </div>
     <section class="hero">
         <div class="hero-photo">
             <img src="/static/images/monica-huang.png" alt="黄馨洁 Xinjie (Monica) Huang" width="148" height="148">
@@ -260,7 +242,6 @@
                 <span>+852 5142 7267</span>
                 <span data-i18n="hero.location">Hong Kong</span>
             </div>
-            <p class="site-note" data-i18n="hero.siteNote">This page is my public profile on xjhuang.com (no sign-in). ACTR research tools run on group.xjhuang.com — Dashboard, Admin, and Login require sign-in.</p>
         </div>
     </section>
 
@@ -409,7 +390,6 @@
         </ul>
     </section>
 
-    <p class="note" data-i18n="footer.note">xjhuang.com/home — public profile. group.xjhuang.com — ACTR Lab (sign in for Dashboard, Admin, Manual).</p>
 </main>
 
 <script>
@@ -420,7 +400,6 @@ const HOME_I18N = {
         'hero.lab': 'From ACTR Lab · HKUST',
         'hero.tagline': 'Research Assistant · Human–AI Interaction',
         'hero.location': 'Hong Kong',
-        'hero.siteNote': 'This page is my public profile on xjhuang.com (no sign-in). ACTR research tools run on group.xjhuang.com — Dashboard, Admin, and Login require sign-in.',
         'apps.title': 'Research & Learning Platforms',
         'apps.lead': 'Platforms built with ACTR Lab at HKUST. Click a card to open each site.',
         'apps.chatbot.title': 'Chatbot App',
@@ -468,8 +447,7 @@ const HOME_I18N = {
         'skills.lang': 'Languages: Mandarin (native), English (fluent), French (fluent), Cantonese (beginner).',
         'honors.t1': 'Tests: GRE (V159, Q169, AWA 4.5); IELTS 7.5.',
         'honors.t2': 'Certifications: PMP; Huawei Certified Cloud Service Solutions Architect.',
-        'honors.t3': 'Awards: Student Representative (Imperial); Intercultural Ambassador (Leeds).',
-        'footer.note': 'xjhuang.com/home — public profile. group.xjhuang.com — ACTR Lab (sign in for Dashboard, Admin, Manual).'
+        'honors.t3': 'Awards: Student Representative (Imperial); Intercultural Ambassador (Leeds).'
     },
     'zh-Hans': {
         'nav.home': '主页', 'nav.dashboard': '控制台', 'nav.admin': '管理', 'nav.manual': '手册', 'nav.login': '登录',
@@ -477,7 +455,6 @@ const HOME_I18N = {
         'hero.lab': 'ACTR Lab · 香港科技大学',
         'hero.tagline': '研究助理 · 人机交互',
         'hero.location': '香港',
-        'hero.siteNote': '本页为 xjhuang.com 公开个人主页，无需登录。ACTR 研究工具在 group.xjhuang.com，控制台、管理与登录需注册/管理员账号。',
         'apps.title': '研究与教学平台',
         'apps.lead': '与 HKUST ACTR Lab 共同开发。点击下方卡片进入各站点。',
         'apps.chatbot.title': 'Chatbot App',
@@ -525,8 +502,7 @@ const HOME_I18N = {
         'skills.lang': '语言：普通话（母语）、英语（流利）、法语（流利）、粤语（初学）。',
         'honors.t1': '考试：GRE (V159, Q169, AWA 4.5)；IELTS 7.5。',
         'honors.t2': '证书：PMP；华为认证云服务解决方案架构师。',
-        'honors.t3': '荣誉：帝国理工学生代表；利兹跨文化大使。',
-        'footer.note': 'xjhuang.com/home — 公开主页。group.xjhuang.com — ACTR Lab（控制台/管理/手册需登录）。'
+        'honors.t3': '荣誉：帝国理工学生代表；利兹跨文化大使。'
     },
     'zh-Hant': {
         'nav.home': '主頁', 'nav.dashboard': '控制台', 'nav.admin': '管理', 'nav.manual': '手冊', 'nav.login': '登入',
@@ -534,7 +510,6 @@ const HOME_I18N = {
         'hero.lab': 'ACTR Lab · 香港科技大學',
         'hero.tagline': '研究助理 · 人機互動',
         'hero.location': '香港',
-        'hero.siteNote': '本頁為 xjhuang.com 公開個人主頁，無需登入。ACTR 研究工具在 group.xjhuang.com，控制台、管理與登入需註冊／管理員帳號。',
         'apps.title': '研究與教學平台',
         'apps.lead': '與 HKUST ACTR Lab 共同開發。點擊下方卡片進入各站點。',
         'apps.chatbot.title': 'Chatbot App',
@@ -582,8 +557,7 @@ const HOME_I18N = {
         'skills.lang': '語言：普通話（母語）、英語（流利）、法語（流利）、粵語（初學）。',
         'honors.t1': '考試：GRE (V159, Q169, AWA 4.5)；IELTS 7.5。',
         'honors.t2': '證書：PMP；華為認證雲服務解決方案架構師。',
-        'honors.t3': '榮譽：帝國理工學生代表；利茲跨文化大使。',
-        'footer.note': 'xjhuang.com/home — 公開主頁。group.xjhuang.com — ACTR Lab（控制台／管理／手冊需登入）。'
+        'honors.t3': '榮譽：帝國理工學生代表；利茲跨文化大使。'
     }
 };
 

@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -7,8 +9,18 @@ from admin_auth import check_auth, get_auth_principal, is_super_admin
 router = APIRouter(tags=["pages"])
 
 
+def _login_redirect(next_path: str) -> RedirectResponse:
+    safe = quote(next_path or "/", safe="/?=&")
+    return RedirectResponse(url=f"/login?redirect={safe}", status_code=302)
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
+    if check_auth(request):
+        target = (request.query_params.get("redirect") or "/").strip()
+        if not target.startswith("/"):
+            target = "/"
+        return RedirectResponse(url=target, status_code=302)
     return templates.TemplateResponse("login.html", {"request": request})
 
 
@@ -21,7 +33,7 @@ async def home_page(request: Request):
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     if not check_auth(request):
-        return templates.TemplateResponse("login.html", {"request": request})
+        return _login_redirect("/")
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
@@ -46,19 +58,21 @@ async def embed_page(request: Request):
 @router.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request):
     if not check_auth(request):
-        return templates.TemplateResponse("login.html", {"request": request})
+        return _login_redirect("/admin")
     return templates.TemplateResponse("admin.html", {"request": request})
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def dashboard_page():
+async def dashboard_page(request: Request):
+    if not check_auth(request):
+        return _login_redirect("/")
     return RedirectResponse(url="/", status_code=302)
 
 
 @router.get("/manual", response_class=HTMLResponse)
 async def manual_page(request: Request):
     if not check_auth(request):
-        return templates.TemplateResponse("login.html", {"request": request})
+        return _login_redirect("/manual")
     return templates.TemplateResponse("manual.html", {"request": request})
 
 
@@ -77,18 +91,13 @@ async def admin_accounts_page(request: Request):
     principal = get_auth_principal(request)
     if not is_super_admin(principal):
         if not check_auth(request):
-            return templates.TemplateResponse("login.html", {"request": request})
+            return _login_redirect("/admin/accounts")
         return RedirectResponse(url="/", status_code=302)
     return templates.TemplateResponse("admin_accounts.html", {"request": request})
 
 
 @router.get("/account", response_class=HTMLResponse)
 async def account_page(request: Request):
-    from admin_auth import check_auth
-
     if not check_auth(request):
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request},
-        )
+        return _login_redirect("/account")
     return templates.TemplateResponse("account.html", {"request": request})
