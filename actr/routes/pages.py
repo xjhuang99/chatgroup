@@ -9,6 +9,7 @@ from admin_auth import check_auth, get_auth_principal, is_super_admin
 router = APIRouter(tags=["pages"])
 
 _GROUP_HOSTS = frozenset({"group.xjhuang.com"})
+_PERSONAL_HOSTS = frozenset({"xjhuang.com", "www.xjhuang.com"})
 
 
 def _request_host(request: Request) -> str:
@@ -17,6 +18,10 @@ def _request_host(request: Request) -> str:
 
 def _is_group_site(request: Request) -> bool:
     return _request_host(request) in _GROUP_HOSTS
+
+
+def _is_personal_site(request: Request) -> bool:
+    return _request_host(request) in _PERSONAL_HOSTS
 
 
 def _login_redirect(next_path: str) -> RedirectResponse:
@@ -52,6 +57,8 @@ async def home_page(request: Request):
 
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
+    if _is_personal_site(request):
+        return RedirectResponse(url="/home", status_code=302)
     if not check_auth(request):
         return _require_auth_or_login(request, "/")
     return templates.TemplateResponse("dashboard.html", {"request": request})
