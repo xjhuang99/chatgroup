@@ -115,6 +115,7 @@
 <div class="page">
     <aside class="toc">
         <h3>Contents</h3>
+        <a href="#researcher-access">Researcher access</a>
         <a href="#quick-start">Quick start</a>
         <a href="#admin-fields">Admin fields</a>
         <a href="#matching">Matching</a>
@@ -136,13 +137,24 @@
 
         <div class="section" id="quick-start">
             <h1>ACTR Manual</h1>
-            <p>ACTR is a group-chat platform for research. Participants join from Qualtrics or the Dashboard. AI personas can reply alongside humans in the same room.</p>
+            <p>ACTR is a group-chat platform for research. Participants join from Qualtrics, the Dashboard, or <a href="/join">/join</a>. AI personas can reply alongside humans in the same room.</p>
+
+            <h2 id="researcher-access">Researcher access</h2>
+            <p>Admin, Dashboard, and this Manual require sign-in. Production URL: <code>https://group.xjhuang.com</code>.</p>
+            <ul>
+                <li><strong><a href="/login">Sign in</a></strong> — lab super-admin (e.g. <code>ACTR2026</code>) or a registered researcher account. Use <code>/login?redirect=/admin</code> (or another path) to return after login.</li>
+                <li><strong><a href="/register">Create researcher account</a></strong> — email + password; each account gets a default <strong>$200</strong> API budget across all sessions it creates (see <a href="#usage-cost">Usage &amp; cost</a>).</li>
+                <li><strong><a href="/account">Account</a></strong> — registered researchers see spend vs budget on the Dashboard header and can open Account for details.</li>
+                <li><strong><a href="/admin/accounts">Researchers (admin)</a></strong> — <em>super-admin only</em>: view accounts and raise per-person budgets.</li>
+            </ul>
+            <p>Registered researchers see only their own sessions on the Dashboard; super-admin sees all.</p>
 
             <h2>Quick start</h2>
             <ol>
-                <li>Open <a href="/admin">Admin</a>. Click <strong>★ Example</strong>, set <strong>Min / max humans per group</strong> and persona names, then <strong>Create Session</strong>.</li>
+                <li><a href="/login">Sign in</a>, then open <a href="/admin">Admin</a>. Click <strong>★ Example</strong>, set <strong>Min / max humans per group</strong> and persona names, then <strong>Create Session</strong>.</li>
                 <li>After create, copy the <strong>Qualtrics HTML</strong> block (if Qualtrics is On) from the setup panel below the form.</li>
                 <li>Participants complete the survey, chat in the embedded room, and click <strong>Next</strong>. You monitor live traffic on the <a href="/">Dashboard</a> and download CSVs under <strong>Export</strong> if needed.</li>
+                <li>For a quick pilot without Qualtrics: Dashboard → <strong>Sessions</strong> → join a test queue, or open <a href="/join">/join</a> with <code>session_id</code> in the URL.</li>
             </ol>
 
             <h3>Typical room layouts</h3>
@@ -246,7 +258,7 @@
                 <thead><tr><th>Field</th><th>What it does</th></tr></thead>
                 <tbody>
                     <tr><td>Name</td><td>Display name in chat. With Condition On, some conditions may show “(may use AI)” next to certain names.</td></tr>
-                    <tr><td>Model</td><td>Which LLM powers this persona — see <a href="#llm-models">LLM models</a>. ★ Example uses <code>deepseek-chat</code> for both personas.</td></tr>
+                    <tr><td>Model</td><td>Which LLM powers this persona — see <a href="#llm-models">LLM models</a>. Admin labels this <strong>GPT model</strong> but the dropdown includes DeepSeek and OpenAI ids. ★ Example uses <code>deepseek-chat</code> for both personas.</td></tr>
                     <tr><td>Avatar</td><td>Bot 🤖 or Human 👤 — cosmetic only in the chat UI.</td></tr>
                     <tr><td>Persona mode</td><td>When <em>this</em> persona speaks — see <a href="#persona-modes">Persona modes</a> (not the same as session mode).</td></tr>
                     <tr><td>Prompt</td><td>System instructions for tone, topic, and deflection rules. Use <strong>Sync prompt to all</strong> to copy persona 1’s prompt to every persona.</td></tr>
@@ -357,6 +369,7 @@
                     <tr><td>Session mode</td><td><strong>1</strong></td><td>All bots may respond; persona skip thins traffic.</td></tr>
                     <tr><td>Reply on any message</td><td><strong>On</strong></td><td>Bots may react to bot messages within max chain depth.</td></tr>
                     <tr><td>Max chain depth</td><td><strong>2</strong></td><td>Matches <code>human_defaults.py</code> and Admin ★ Example; allows bot-triggered waves at depths 1 and 2 after a human/opening at depth 0.</td></tr>
+                    <tr><td>Use @mentions</td><td><strong>Off</strong></td><td>★ Example keeps mentions disabled; turn On in Admin if you want <code>@name</code> prefixes (set mention probability when enabled).</td></tr>
                     <tr><td>Model (each persona)</td><td><strong>deepseek-chat</strong></td><td>Default API; set <code>OPENAI_API_KEY</code> and pick a GPT model per persona if needed.</td></tr>
                     <tr><td>AI opens chat</td><td><strong>Yes</strong></td><td>A random persona opens with a short first line.</td></tr>
                     <tr><td>Condition (Admin)</td><td><strong>On</strong></td><td>Match by Qualtrics <code>condition</code>; see <a href="#example-condition">Example condition</a>.</td></tr>
@@ -371,7 +384,7 @@
                     <tr><td>Skip rate</td><td><strong>15%</strong></td><td>Each eligible message: 15% chance this persona stays silent.</td></tr>
                     <tr><td>Max words</td><td><strong>20</strong></td><td>Still concise, but enough room for one concrete idea.</td></tr>
                     <tr><td>Delay + typing</td><td><strong>5 s</strong>, <strong>2</strong> cps</td><td>Less “instant bot” feel.</td></tr>
-                    <tr><td>Temperature</td><td><strong>0.7</strong></td><td>Balanced wording variety.</td></tr>
+                    <tr><td>Temperature</td><td><strong>a: 0.65, b: 0.9</strong></td><td>Slightly different voice per persona (Admin ★ Example).</td></tr>
                     <tr><td>Emoji</td><td><strong>Off</strong></td><td>Plain text by default; turn On per persona for casual reactions.</td></tr>
                 </tbody>
             </table>
@@ -425,9 +438,9 @@
             <h2>Dashboard</h2>
             <p>Top metrics include <strong>API spend (all)</strong> and <strong>This hour</strong> — rolling estimates across all tracked LLM calls.</p>
             <ul>
-                <li><strong>Sessions</strong> — join a queue for testing, open published session settings (including per-session <strong>API cap / group</strong> in USD).</li>
-                <li><strong>Monitor</strong> — read-only live view of active rooms; each row shows spend vs cap (<code>$spent / $cap</code>).</li>
-                <li><strong>Export</strong> — download activity logs or chat history as CSV (optional; Qualtrics Out fields are the primary handoff when integration is On).</li>
+                <li><strong>Sessions</strong> — join a queue for testing (or use <a href="/join">/join</a>), open published session settings (including per-session <strong>API cap / group</strong> in USD).</li>
+                <li><strong>Monitor</strong> — live view of active rooms; each row shows spend vs cap (<code>$spent / $cap</code>). <strong>Pause</strong> / <strong>Resume</strong> stops new human messages and bot replies in that room until you resume (participants see “Chat is paused by the researcher”).</li>
+                <li><strong>Export</strong> — two CSV types per session: <strong>activity</strong> (session settings + event log) and <strong>room messages</strong> (chat lines per <code>GRP-…</code>). Optional when Qualtrics Out fields are your primary handoff.</li>
                 <li><strong>Usage &amp; cost</strong> — see <a href="#usage-cost">Usage &amp; cost</a>.</li>
             </ul>
             <h3>Modify a published session</h3>
@@ -475,7 +488,9 @@
         <div class="section" id="faq">
             <h2>FAQ</h2>
             <h3>How do I watch without joining?</h3>
-            <p>Dashboard → Monitor → select a room.</p>
+            <p>Dashboard → Monitor → select a room. Use <strong>Pause</strong> to freeze a live room during a class break; <strong>Resume</strong> when ready.</p>
+            <h3>How do I get a researcher account?</h3>
+            <p>Open <a href="/register">/register</a>, then sign in at <a href="/login">/login</a>. Super-admin manages budgets on <strong>Researchers (admin)</strong>.</p>
             <h3>Can I change settings after create?</h3>
             <p>Yes, while the survey window is open: Dashboard → Published sessions → select → <strong>Edit</strong> → <strong>Save</strong>. If Save fails, read the toast message (auth, validation, or disk error).</p>
             <h3>What is session mode 4 vs mode 1?</h3>
