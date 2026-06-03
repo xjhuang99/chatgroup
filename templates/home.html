@@ -3,16 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home — Monica Xinjie Huang</title>
+    <title>Home — Xinjie (Monica) Huang</title>
     <link rel="canonical" href="https://xjhuang.com/home">
     <link rel="stylesheet" href="/static/theme.css">
     <style>
-        body { line-height: 1.65; }
+        body { line-height: 1.65; transition: font-family 0.15s; }
+        body.lang-en {
+            font-family: "Inter", "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body.lang-zh-Hans {
+            font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
+        }
+        body.lang-zh-Hant {
+            font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
+        }
         .page {
             max-width: 920px;
             margin: calc(var(--header-height) + 14px) auto 48px;
             padding: 0 20px;
         }
+        .lang-switch {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .lang-switch button {
+            padding: 5px 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            background: var(--white);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--gray-700);
+            font-family: inherit;
+        }
+        .lang-switch button.active {
+            background: var(--orange-pale);
+            border-color: var(--orange);
+            color: var(--orange-dark);
+        }
+        .nav-header { flex-wrap: wrap; gap: 12px; }
+        .nav-header .nav-logo { font-size: 1.15rem; }
+        .nav-header .nav-links a.nav-actr { color: var(--gray-700); }
+        .nav-header .nav-links a.nav-actr:hover { color: var(--orange-dark); }
         .hero {
             display: flex;
             flex-wrap: wrap;
@@ -24,9 +59,6 @@
             border: 1px solid var(--gray-300);
             box-shadow: var(--shadow-md);
             margin-bottom: 20px;
-        }
-        .hero-photo {
-            flex-shrink: 0;
         }
         .hero-photo img {
             width: 148px;
@@ -43,7 +75,6 @@
             font-weight: 800;
             color: var(--gray-900);
             margin-bottom: 4px;
-            letter-spacing: 0.02em;
         }
         .hero .name-alt {
             font-size: var(--fs-sm);
@@ -51,10 +82,22 @@
             font-weight: 600;
             margin-bottom: 10px;
         }
+        .hero .lab-line {
+            font-size: var(--fs-sm);
+            color: var(--orange-dark);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
         .hero .tagline {
             font-size: var(--fs-md);
             color: var(--gray-700);
             margin-bottom: 12px;
+        }
+        .hero .site-note {
+            font-size: var(--fs-sm);
+            color: var(--gray-500);
+            margin-top: 10px;
+            max-width: 36em;
         }
         .contact {
             display: flex;
@@ -65,7 +108,6 @@
         }
         .contact a { color: var(--orange-dark); font-weight: 600; text-decoration: none; }
         .contact a:hover { text-decoration: underline; }
-
         .app-guide {
             background: var(--white);
             border-radius: 14px;
@@ -95,7 +137,7 @@
         .app-card {
             display: flex;
             flex-direction: column;
-            min-height: 168px;
+            min-height: 180px;
             padding: 20px 22px 18px;
             border-radius: 12px;
             border: 2px solid var(--gray-300);
@@ -103,29 +145,13 @@
             text-decoration: none;
             color: inherit;
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
-            cursor: pointer;
         }
         a.app-card:hover {
             border-color: var(--orange);
             transform: translateY(-3px);
             box-shadow: 0 8px 24px rgba(230, 126, 34, 0.18);
         }
-        .app-card.soon {
-            cursor: default;
-            opacity: 0.92;
-            border-style: dashed;
-            background: var(--gray-100);
-        }
-        .app-card.soon:hover {
-            transform: none;
-            box-shadow: none;
-            border-color: var(--gray-300);
-        }
-        .app-card .app-icon {
-            font-size: 2rem;
-            line-height: 1;
-            margin-bottom: 10px;
-        }
+        .app-card .app-icon { font-size: 2rem; margin-bottom: 10px; }
         .app-card .app-title {
             font-size: 1.1rem;
             font-weight: 800;
@@ -139,14 +165,18 @@
             line-height: 1.5;
             margin-bottom: 14px;
         }
+        .app-card .app-url {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
         .app-card .app-cta {
             font-size: var(--fs-sm);
             font-weight: 800;
             color: var(--orange-dark);
         }
         a.app-card:hover .app-cta { text-decoration: underline; }
-        .app-card.soon .app-cta { color: var(--gray-500); }
-
         .section {
             background: var(--white);
             border-radius: 14px;
@@ -165,19 +195,14 @@
             padding-bottom: 8px;
             border-bottom: 2px solid var(--gray-100);
         }
-        .toc-jump {
-            font-size: var(--fs-sm);
-            margin-bottom: 16px;
-        }
+        .toc-jump { font-size: var(--fs-sm); margin-bottom: 16px; }
         .toc-jump a {
             color: var(--orange-dark);
             font-weight: 600;
             text-decoration: none;
             margin-right: 12px;
         }
-        .toc-jump a:hover { text-decoration: underline; }
         .entry { margin-bottom: 18px; }
-        .entry:last-child { margin-bottom: 0; }
         .entry-head {
             display: flex;
             flex-wrap: wrap;
@@ -188,219 +213,409 @@
         .entry-title { font-weight: 800; color: var(--gray-900); }
         .entry-meta { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
         .entry-sub { font-size: var(--fs-sm); color: var(--gray-700); margin-bottom: 6px; }
-        ul.bullets {
-            padding-left: 1.25rem;
-            margin: 0;
-            font-size: var(--fs-md);
-            color: #444;
-        }
+        ul.bullets { padding-left: 1.25rem; margin: 0; font-size: var(--fs-md); color: #444; }
         ul.bullets li { margin-bottom: 6px; }
         ul.bullets a { color: var(--orange-dark); font-weight: 600; }
-        .research-title { font-weight: 800; color: var(--gray-900); }
+        .research-title { font-weight: 800; }
         .research-status { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
-        .note {
-            font-size: var(--fs-sm);
-            color: var(--gray-500);
-            margin-top: 16px;
-            text-align: center;
-        }
-        @media (max-width: 560px) {
+        .note { font-size: var(--fs-sm); color: var(--gray-500); margin-top: 16px; text-align: center; }
+        @media (max-width: 720px) {
+            .lang-switch { margin-left: 0; width: 100%; justify-content: flex-end; }
             .hero { justify-content: center; text-align: center; }
             .contact { justify-content: center; }
-            .hero-photo img { width: 128px; height: 128px; }
+            .hero .site-note { margin-left: auto; margin-right: auto; }
         }
     </style>
 </head>
-<body class="has-top-nav">
+<body class="has-top-nav lang-en" id="homeBody">
 
 <header class="nav-header">
-    <a href="https://xjhuang.com/home" class="nav-logo">ACTR</a>
+    <a href="https://xjhuang.com/home" class="nav-logo">Monica Huang</a>
     <nav class="nav-links">
-        <a href="https://xjhuang.com/home" class="active">Home</a>
-        <a href="https://group.xjhuang.com/">Dashboard</a>
-        <a href="https://group.xjhuang.com/admin">Admin</a>
-        <a href="https://group.xjhuang.com/manual">Manual</a>
-        <a href="https://group.xjhuang.com/login">Login</a>
+        <a href="https://xjhuang.com/home" class="active" data-i18n="nav.home">Home</a>
+        <a href="https://group.xjhuang.com/" class="nav-actr" data-i18n="nav.dashboard">Dashboard</a>
+        <a href="https://group.xjhuang.com/admin" class="nav-actr" data-i18n="nav.admin">Admin</a>
+        <a href="https://group.xjhuang.com/manual" class="nav-actr" data-i18n="nav.manual">Manual</a>
+        <a href="https://group.xjhuang.com/login" class="nav-actr" data-i18n="nav.login">Login</a>
     </nav>
+    <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang="zh-Hans">简体</button>
+        <button type="button" data-lang="en" class="active">EN</button>
+        <button type="button" data-lang="zh-Hant">繁體</button>
+    </div>
 </header>
 
 <main class="page">
     <section class="hero">
         <div class="hero-photo">
-            <img src="/static/images/monica-huang.png" alt="Monica Xinjie Huang" width="148" height="148">
+            <img src="/static/images/monica-huang.png" alt="黄馨洁 Xinjie (Monica) Huang" width="148" height="148">
         </div>
         <div class="hero-text">
-            <h1>Monica Xinjie HUANG</h1>
-            <p class="name-alt">黄欣洁 · Xinjie Huang</p>
-            <p class="tagline">Research Assistant · Human–AI Interaction · HKUST</p>
+            <h1 data-i18n="hero.name">Xinjie (Monica) Huang</h1>
+            <p class="name-alt">黄馨洁</p>
+            <p class="lab-line" data-i18n="hero.lab">From ACTR Lab · HKUST</p>
+            <p class="tagline" data-i18n="hero.tagline">Research Assistant · Human–AI Interaction</p>
             <div class="contact">
                 <a href="mailto:xinjiehuang@ust.hk">xinjiehuang@ust.hk</a>
                 <span>+852 5142 7267</span>
-                <span>Hong Kong</span>
+                <span data-i18n="hero.location">Hong Kong</span>
             </div>
+            <p class="site-note" data-i18n="hero.siteNote">This page is my public profile on xjhuang.com (no sign-in). ACTR research tools run on group.xjhuang.com — Dashboard, Admin, and Login require sign-in.</p>
         </div>
     </section>
 
     <section class="app-guide" id="apps">
-        <h2>Research &amp; Learning Platforms</h2>
-        <p class="guide-lead">Click a card to open the app. Researchers sign in on ACTR Dashboard to create sessions and monitor live rooms.</p>
+        <h2 data-i18n="apps.title">Research &amp; Learning Platforms</h2>
+        <p class="guide-lead" data-i18n="apps.lead">Platforms built with ACTR Lab at HKUST. Click a card to open each site.</p>
         <div class="app-grid">
-            <a class="app-card" href="https://app.bitterlylab.com/home" rel="noopener" target="_blank">
+            <a class="app-card" href="https://actrlab.com/home" rel="noopener" target="_blank">
                 <span class="app-icon" aria-hidden="true">💬</span>
-                <span class="app-title">Chatbot App</span>
-                <span class="app-desc">One-on-one and classroom chatbots for teaching and research; featured in HKUST Library GenAI programming.</span>
-                <span class="app-cta">Open app →</span>
+                <span class="app-title" data-i18n="apps.chatbot.title">Chatbot App</span>
+                <span class="app-desc" data-i18n="apps.chatbot.desc">One-on-one and classroom chatbots for teaching and research; featured in HKUST Library GenAI programming.</span>
+                <span class="app-url">actrlab.com/home</span>
+                <span class="app-cta" data-i18n="apps.open">Open app →</span>
             </a>
-            <a class="app-card" href="https://group.xjhuang.com/embed.html" rel="noopener">
+            <a class="app-card" href="https://group.xjhuang.com/" rel="noopener">
                 <span class="app-icon" aria-hidden="true">👥</span>
-                <span class="app-title">AI + Human Group Chat (ACTR)</span>
-                <span class="app-desc">Multi-party group experiments with AI personas, Qualtrics embed, matching, and usage caps — <strong>group.xjhuang.com</strong>.</span>
-                <span class="app-cta">Open embed →</span>
+                <span class="app-title" data-i18n="apps.group.title">AI + Human Group Chat</span>
+                <span class="app-desc" data-i18n="apps.group.desc">Multi-party group experiments with AI personas.</span>
+                <span class="app-url">group.xjhuang.com</span>
+                <span class="app-cta" data-i18n="apps.openPlatform">Open platform →</span>
             </a>
-            <a class="app-card" href="https://group.xjhuang.com/login" rel="noopener">
-                <span class="app-icon" aria-hidden="true">📊</span>
-                <span class="app-title">ACTR Dashboard</span>
-                <span class="app-desc">Create sessions, configure bots, monitor rooms, export transcripts, and manage API budgets.</span>
-                <span class="app-cta">Sign in →</span>
-            </a>
-            <div class="app-card soon" role="presentation">
+            <a class="app-card" href="https://game.actrlab.com/admin" rel="noopener" target="_blank">
                 <span class="app-icon" aria-hidden="true">🤝</span>
-                <span class="app-title">Prisoner’s Dilemma + AI</span>
-                <span class="app-desc">Advanced negotiation game with AI for business students — launching in an upcoming term.</span>
-                <span class="app-cta">Coming soon</span>
-            </div>
+                <span class="app-title" data-i18n="apps.game.title">Prisoner's Dilemma + AI</span>
+                <span class="app-desc" data-i18n="apps.game.desc">Advanced negotiation game with AI for business students.</span>
+                <span class="app-url">game.actrlab.com/admin</span>
+                <span class="app-cta" data-i18n="apps.openAdmin">Open admin →</span>
+            </a>
         </div>
     </section>
 
     <p class="toc-jump">
-        <a href="#experience">Experience</a>
-        <a href="#research">Research</a>
-        <a href="#education">Education</a>
-        <a href="#skills">Skills</a>
+        <a href="#experience" data-i18n="toc.experience">Experience</a>
+        <a href="#research" data-i18n="toc.research">Research</a>
+        <a href="#education" data-i18n="toc.education">Education</a>
+        <a href="#skills" data-i18n="toc.skills">Skills</a>
     </p>
 
     <section class="section" id="experience">
-        <h2>Professional Experience</h2>
-
+        <h2 data-i18n="sec.experience">Professional Experience</h2>
         <div class="entry">
             <div class="entry-head">
-                <span class="entry-title">Hong Kong University of Science and Technology</span>
-                <span class="entry-meta">Apr 2025 — Present</span>
+                <span class="entry-title" data-i18n="exp.hkust.org">Hong Kong University of Science and Technology</span>
+                <span class="entry-meta" data-i18n="exp.hkust.date">Apr 2025 — Present</span>
             </div>
-            <div class="entry-sub">Hong Kong · Research Assistant</div>
+            <div class="entry-sub" data-i18n="exp.hkust.role">Hong Kong · Research Assistant</div>
             <ul class="bullets">
-                <li>Supported research through literature reviews, quantitative analysis (Stata/R), qualitative work, and scale development.</li>
-                <li>Helped prepare applications for <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> and large TLIP funding initiatives.</li>
-                <li>Assisted a literature-review tool featured in <a href="https://library.hkust.edu.hk/news-events/news/mastering-research-genai-age" rel="noopener" target="_blank">Mastering Research in the GenAI Age</a> (HKUST Library).</li>
-                <li>Built and maintained the platforms in the guide above (Chatbot App, ACTR group chat, and upcoming PD game).</li>
+                <li data-i18n="exp.hkust.b1">Supported research through literature reviews, Stata/R quantitative analysis, qualitative methods, and scale development.</li>
+                <li data-i18n-html="exp.hkust.b2">Helped prepare applications for <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> and <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">large TLIP</a> funding initiatives.</li>
+                <li data-i18n="exp.hkust.b3">Conduct qualitative and quantitative research on AI use in institutions.</li>
+                <li data-i18n="exp.hkust.b4">Assisted a literature-review tool featured in HKUST Library GenAI programming.</li>
+                <li data-i18n="exp.hkust.b5">Built and maintained ACTR Lab platforms (Chatbot App, group chat, PD game).</li>
             </ul>
         </div>
-
         <div class="entry">
             <div class="entry-head">
-                <span class="entry-title">China Mobile International Limited</span>
-                <span class="entry-meta">Sep 2021 — Dec 2024</span>
+                <span class="entry-title" data-i18n="exp.cmcc.org">China Mobile International Limited</span>
+                <span class="entry-meta" data-i18n="exp.cmcc.date">Sep 2021 — Dec 2024</span>
             </div>
-            <div class="entry-sub">Hong Kong &amp; Shenzhen · Technical Consultant</div>
+            <div class="entry-sub" data-i18n="exp.cmcc.role">Hong Kong &amp; Shenzhen · Technical Consultant</div>
             <ul class="bullets">
-                <li><strong>Digital transformation:</strong> Led initiatives integrating AI, cloud, and ERP digitalization.</li>
-                <li><strong>Strategic management:</strong> Coordinated 80+ enterprise infrastructure projects; internal trainer on digital management.</li>
+                <li data-i18n="exp.cmcc.b1">Digital transformation: AI, cloud, and ERP digitalization.</li>
+                <li data-i18n="exp.cmcc.b2">Coordinated 80+ enterprise infrastructure projects; internal trainer on digital management.</li>
             </ul>
         </div>
     </section>
 
     <section class="section" id="interests">
-        <h2>Research Interests</h2>
-        <p><strong>Primary areas:</strong> Human–AI interaction, status, and trust.</p>
+        <h2 data-i18n="sec.interests">Research Interests</h2>
+        <p data-i18n="interests.text"><strong>Primary areas:</strong> Human–AI interaction, status, and trust.</p>
     </section>
 
     <section class="section" id="research">
-        <h2>Selected Research Papers &amp; Projects</h2>
-
+        <h2 data-i18n="sec.research">Selected Research Papers &amp; Projects</h2>
         <div class="entry">
-            <p><span class="research-title">AI Use and Trust</span> — <span class="research-status">Under review at <em>Journal of Experimental Social Psychology</em></span></p>
+            <p><span class="research-title" data-i18n="res.trust.title">AI Use and Trust</span> — <span class="research-status" data-i18n="res.trust.status">Under review at JESP</span></p>
             <ul class="bullets">
-                <li>Co-designed eight large-scale studies (total <em>N</em> = 4,994) on how AI use shapes trust.</li>
-                <li>Literature review, Stata/R analyses, and scale development for AI-related trust measures.</li>
+                <li data-i18n="res.trust.b1">Eight large-scale studies (N = 4,994) on how AI use shapes trust.</li>
+                <li data-i18n="res.trust.b2">Literature review, Stata/R analyses, scale development.</li>
             </ul>
         </div>
-
         <div class="entry">
-            <p><span class="research-title">AI and Status</span> — <span class="research-status">Working paper</span></p>
+            <p><span class="research-title" data-i18n="res.status.title">AI and Status</span> — <span class="research-status" data-i18n="res.status.label">Working paper</span></p>
             <ul class="bullets">
-                <li>How individual AI adoption reshapes perceptions of <strong>competence and status</strong> in organizations.</li>
-                <li>Survey experiments on perceived competence and normative assimilation.</li>
+                <li data-i18n="res.status.b1">How AI adoption reshapes competence and status perceptions in organizations.</li>
+                <li data-i18n="res.status.b2">Survey experiments on competence and normative assimilation.</li>
             </ul>
         </div>
-
         <div class="entry">
-            <p><span class="research-title">AI-Augmented Group Dynamics Mapper</span> — <span class="research-status">Working project</span></p>
+            <p><span class="research-title" data-i18n="res.mapper.title">AI-Augmented Group Dynamics Mapper</span> — <span class="research-status" data-i18n="res.mapper.label">Working project</span></p>
             <ul class="bullets">
-                <li>Transformer-based pipeline for multi-party chats and 3D “conversation terrain” visualizations, built on <a href="https://group.xjhuang.com/" rel="noopener">ACTR group chat</a> (<code>group.xjhuang.com</code>).</li>
+                <li data-i18n="res.mapper.b1">Transformer-based pipeline for multi-party chats and 3D “conversation terrain” visualizations.</li>
             </ul>
         </div>
-
         <div class="entry">
-            <p><span class="research-title">ESIC Scale (Emotional Support for Interpersonal Connections)</span> — <span class="research-status">Working project</span></p>
+            <p><span class="research-title" data-i18n="res.esic.title">ESIC Scale</span> — <span class="research-status" data-i18n="res.esic.label">Working project</span></p>
             <ul class="bullets">
-                <li>Two-factor scale (comfort with online interaction &amp; AI companions); pilot qual, EFA/CFA (<em>N</em> &gt; 1,300).</li>
+                <li data-i18n="res.esic.b1">Two-factor scale (online comfort &amp; AI companions); EFA/CFA (N &gt; 1,300).</li>
             </ul>
         </div>
     </section>
 
     <section class="section" id="education">
-        <h2>Education</h2>
-
+        <h2 data-i18n="sec.education">Education</h2>
         <div class="entry">
             <div class="entry-head">
-                <span class="entry-title">Imperial College London</span>
-                <span class="entry-meta">Oct 2020 — Oct 2021</span>
+                <span class="entry-title" data-i18n="edu.ic.org">Imperial College London</span>
+                <span class="entry-meta" data-i18n="edu.ic.date">Oct 2020 — Oct 2021</span>
             </div>
-            <div class="entry-sub">London, UK · MSc Communications and Signal Processing (Merit)</div>
-            <ul class="bullets">
-                <li><strong>Thesis:</strong> Doppler radar signal processing — MATLAB + Microwave Studio.</li>
-            </ul>
+            <div class="entry-sub" data-i18n="edu.ic.degree">MSc Communications and Signal Processing (Merit)</div>
+            <ul class="bullets"><li data-i18n="edu.ic.b1">Thesis: Doppler radar signal processing (MATLAB + Microwave Studio).</li></ul>
         </div>
-
         <div class="entry">
             <div class="entry-head">
-                <span class="entry-title">University of Leeds</span>
-                <span class="entry-meta">Sep 2016 — Jul 2020</span>
+                <span class="entry-title" data-i18n="edu.leeds.org">University of Leeds</span>
+                <span class="entry-meta" data-i18n="edu.leeds.date">Sep 2016 — Jul 2020</span>
             </div>
-            <div class="entry-sub">Leeds, UK · BEng EEE (First Class Honours); dual degree with Southwest Jiaotong University</div>
-            <ul class="bullets">
-                <li><strong>Research:</strong> Machine translation evolution — rule-based to Transformer.</li>
-            </ul>
+            <div class="entry-sub" data-i18n="edu.leeds.degree">BEng EEE (First Class); dual degree with Southwest Jiaotong University</div>
+            <ul class="bullets"><li data-i18n="edu.leeds.b1">Research: machine translation evolution (rule-based to Transformer).</li></ul>
         </div>
     </section>
 
     <section class="section" id="presentations">
-        <h2>Conference Presentations</h2>
+        <h2 data-i18n="sec.presentations">Conference Presentations</h2>
         <ul class="bullets">
-            <li><strong>HKUST CEI Workshop:</strong> “Reimagining Education: A Playground for GenAI Collaboration” (Nov 2025).</li>
-            <li><strong>HKUST CEI Workshop:</strong> “Learning Lab Series: AI Sandbox for Educators” (Apr 2025).</li>
-            <li><strong>Attendee:</strong> 7th Asian Management Research Consortium (AMRC) (May 2025).</li>
+            <li data-i18n="pres.p1">HKUST CEI Workshop: Reimagining Education (Nov 2025).</li>
+            <li data-i18n="pres.p2">HKUST CEI Workshop: AI Sandbox for Educators (Apr 2025).</li>
+            <li data-i18n="pres.p3">Attendee: 7th Asian Management Research Consortium (May 2025).</li>
         </ul>
     </section>
 
     <section class="section" id="skills">
-        <h2>Skills &amp; Languages</h2>
+        <h2 data-i18n="sec.skills">Skills &amp; Languages</h2>
         <ul class="bullets">
-            <li><strong>Programming:</strong> Python, R, Stata, SQL, MATLAB, C++, LaTeX, HTML/JavaScript.</li>
-            <li><strong>Languages:</strong> Mandarin (native), English (fluent), French (fluent), Cantonese (beginner).</li>
+            <li data-i18n="skills.prog">Programming: Python, R, Stata, SQL, MATLAB, C++, LaTeX, HTML/JavaScript.</li>
+            <li data-i18n="skills.lang">Languages: Mandarin (native), English (fluent), French (fluent), Cantonese (beginner).</li>
         </ul>
     </section>
 
     <section class="section" id="honors">
-        <h2>Honors &amp; Certifications</h2>
+        <h2 data-i18n="sec.honors">Honors &amp; Certifications</h2>
         <ul class="bullets">
-            <li><strong>Tests:</strong> GRE (V159, Q169, AWA 4.5); IELTS 7.5.</li>
-            <li><strong>Certifications:</strong> PMP; Huawei Certified Cloud Service Solutions Architect.</li>
-            <li><strong>Awards:</strong> Student Representative (Imperial College); Intercultural Ambassador (University of Leeds).</li>
+            <li data-i18n="honors.t1">Tests: GRE (V159, Q169, AWA 4.5); IELTS 7.5.</li>
+            <li data-i18n="honors.t2">Certifications: PMP; Huawei Certified Cloud Service Solutions Architect.</li>
+            <li data-i18n="honors.t3">Awards: Student Representative (Imperial); Intercultural Ambassador (Leeds).</li>
         </ul>
     </section>
 
-    <p class="note">Personal site: <a href="https://xjhuang.com/home">xjhuang.com/home</a> · ACTR: <a href="https://group.xjhuang.com/login">group.xjhuang.com</a> (sign in)</p>
+    <p class="note" data-i18n="footer.note">xjhuang.com/home — public profile. group.xjhuang.com — ACTR Lab (sign in for Dashboard, Admin, Manual).</p>
 </main>
+
+<script>
+const HOME_I18N = {
+    en: {
+        'nav.home': 'Home', 'nav.dashboard': 'Dashboard', 'nav.admin': 'Admin', 'nav.manual': 'Manual', 'nav.login': 'Login',
+        'hero.name': 'Xinjie (Monica) Huang',
+        'hero.lab': 'From ACTR Lab · HKUST',
+        'hero.tagline': 'Research Assistant · Human–AI Interaction',
+        'hero.location': 'Hong Kong',
+        'hero.siteNote': 'This page is my public profile on xjhuang.com (no sign-in). ACTR research tools run on group.xjhuang.com — Dashboard, Admin, and Login require sign-in.',
+        'apps.title': 'Research & Learning Platforms',
+        'apps.lead': 'Platforms built with ACTR Lab at HKUST. Click a card to open each site.',
+        'apps.chatbot.title': 'Chatbot App',
+        'apps.chatbot.desc': 'One-on-one and classroom chatbots for teaching and research; featured in HKUST Library GenAI programming.',
+        'apps.group.title': 'AI + Human Group Chat',
+        'apps.group.desc': 'Multi-party group experiments with AI personas.',
+        'apps.game.title': "Prisoner's Dilemma + AI",
+        'apps.game.desc': 'Advanced negotiation game with AI for business students.',
+        'apps.open': 'Open app →', 'apps.openPlatform': 'Open platform →', 'apps.openAdmin': 'Open admin →',
+        'toc.experience': 'Experience', 'toc.research': 'Research', 'toc.education': 'Education', 'toc.skills': 'Skills',
+        'sec.experience': 'Professional Experience', 'sec.interests': 'Research Interests', 'sec.research': 'Selected Research Papers & Projects',
+        'sec.education': 'Education', 'sec.presentations': 'Conference Presentations', 'sec.skills': 'Skills & Languages', 'sec.honors': 'Honors & Certifications',
+        'exp.hkust.org': 'Hong Kong University of Science and Technology', 'exp.hkust.date': 'Apr 2025 — Present',
+        'exp.hkust.role': 'Hong Kong · Research Assistant',
+        'exp.hkust.b1': 'Supported research through literature reviews, Stata/R quantitative analysis, qualitative methods, and scale development.',
+        'exp.hkust.b2': 'Helped prepare applications for <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> and <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">large TLIP</a> funding initiatives.',
+        'exp.hkust.b3': 'Conduct qualitative and quantitative research on AI use in institutions.',
+        'exp.hkust.b4': 'Assisted a literature-review tool featured in HKUST Library GenAI programming.',
+        'exp.hkust.b5': 'Built and maintained ACTR Lab platforms (Chatbot App, group chat, PD game).',
+        'exp.cmcc.org': 'China Mobile International Limited', 'exp.cmcc.date': 'Sep 2021 — Dec 2024',
+        'exp.cmcc.role': 'Hong Kong & Shenzhen · Technical Consultant',
+        'exp.cmcc.b1': 'Digital transformation: AI, cloud, and ERP digitalization.',
+        'exp.cmcc.b2': 'Coordinated 80+ enterprise infrastructure projects; internal trainer on digital management.',
+        'interests.text': 'Primary areas: Human–AI interaction, status, and trust.',
+        'res.trust.title': 'AI Use and Trust', 'res.trust.status': 'Under review at JESP',
+        'res.trust.b1': 'Eight large-scale studies (N = 4,994) on how AI use shapes trust.',
+        'res.trust.b2': 'Literature review, Stata/R analyses, scale development.',
+        'res.status.title': 'AI and Status', 'res.status.label': 'Working paper',
+        'res.status.b1': 'How AI adoption reshapes competence and status perceptions in organizations.',
+        'res.status.b2': 'Survey experiments on competence and normative assimilation.',
+        'res.mapper.title': 'AI-Augmented Group Dynamics Mapper', 'res.mapper.label': 'Working project',
+        'res.mapper.b1': 'Transformer-based pipeline for multi-party chats and 3D “conversation terrain” visualizations.',
+        'res.esic.title': 'ESIC Scale (Emotional Support for Interpersonal Connections)', 'res.esic.label': 'Working project',
+        'res.esic.b1': 'Two-factor scale (online comfort & AI companions); EFA/CFA (N > 1,300).',
+        'edu.ic.org': 'Imperial College London', 'edu.ic.date': 'Oct 2020 — Oct 2021',
+        'edu.ic.degree': 'London, UK · MSc Communications and Signal Processing (Merit)',
+        'edu.ic.b1': 'Thesis: Doppler radar signal processing (MATLAB + Microwave Studio).',
+        'edu.leeds.org': 'University of Leeds', 'edu.leeds.date': 'Sep 2016 — Jul 2020',
+        'edu.leeds.degree': 'Leeds, UK · BEng EEE (First Class); dual degree with Southwest Jiaotong University',
+        'edu.leeds.b1': 'Research: machine translation evolution (rule-based to Transformer).',
+        'pres.p1': 'HKUST CEI Workshop: Reimagining Education (Nov 2025).',
+        'pres.p2': 'HKUST CEI Workshop: AI Sandbox for Educators (Apr 2025).',
+        'pres.p3': 'Attendee: 7th Asian Management Research Consortium (May 2025).',
+        'skills.prog': 'Programming: Python, R, Stata, SQL, MATLAB, C++, LaTeX, HTML/JavaScript.',
+        'skills.lang': 'Languages: Mandarin (native), English (fluent), French (fluent), Cantonese (beginner).',
+        'honors.t1': 'Tests: GRE (V159, Q169, AWA 4.5); IELTS 7.5.',
+        'honors.t2': 'Certifications: PMP; Huawei Certified Cloud Service Solutions Architect.',
+        'honors.t3': 'Awards: Student Representative (Imperial); Intercultural Ambassador (Leeds).',
+        'footer.note': 'xjhuang.com/home — public profile. group.xjhuang.com — ACTR Lab (sign in for Dashboard, Admin, Manual).'
+    },
+    'zh-Hans': {
+        'nav.home': '主页', 'nav.dashboard': '控制台', 'nav.admin': '管理', 'nav.manual': '手册', 'nav.login': '登录',
+        'hero.name': 'Xinjie (Monica) Huang',
+        'hero.lab': 'ACTR Lab · 香港科技大学',
+        'hero.tagline': '研究助理 · 人机交互',
+        'hero.location': '香港',
+        'hero.siteNote': '本页为 xjhuang.com 公开个人主页，无需登录。ACTR 研究工具在 group.xjhuang.com，控制台、管理与登录需注册/管理员账号。',
+        'apps.title': '研究与教学平台',
+        'apps.lead': '与 HKUST ACTR Lab 共同开发。点击下方卡片进入各站点。',
+        'apps.chatbot.title': 'Chatbot App',
+        'apps.chatbot.desc': '一对一与课堂聊天机器人，用于教学与研究；曾亮相港科大图书馆 GenAI 系列活动。',
+        'apps.group.title': 'AI + 人类群组聊天',
+        'apps.group.desc': '多人群组实验，配置 AI 人设。',
+        'apps.game.title': '囚徒困境 + AI',
+        'apps.game.desc': '面向商科学生的 AI 谈判博弈高级版。',
+        'apps.open': '打开应用 →', 'apps.openPlatform': '打开平台 →', 'apps.openAdmin': '打开管理端 →',
+        'toc.experience': '经历', 'toc.research': '研究', 'toc.education': '教育', 'toc.skills': '技能',
+        'sec.experience': '工作经历', 'sec.interests': '研究方向', 'sec.research': '论文与项目',
+        'sec.education': '教育背景', 'sec.presentations': '会议报告', 'sec.skills': '技能与语言', 'sec.honors': '荣誉与证书',
+        'exp.hkust.org': '香港科技大学', 'exp.hkust.date': '2025年4月 — 至今',
+        'exp.hkust.role': '香港 · 研究助理',
+        'exp.hkust.b1': '文献综述、Stata/R 定量分析、质性方法与量表开发等研究支持。',
+        'exp.hkust.b2': '协助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 与 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 资助申请。',
+        'exp.hkust.b3': '开展机构（高校等）AI 应用的质性与定量研究。',
+        'exp.hkust.b4': '参与港科大图书馆 GenAI 文献工具项目。',
+        'exp.hkust.b5': '搭建并维护 ACTR Lab 平台（Chatbot、群组聊天、囚徒困境游戏）。',
+        'exp.cmcc.org': '中国移动国际有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
+        'exp.cmcc.role': '香港与深圳 · 技术顾问',
+        'exp.cmcc.b1': '数字化转型：AI、云与 ERP。',
+        'exp.cmcc.b2': '协调 80+ 企业级基础设施项目；内部数字化培训讲师。',
+        'interests.text': '主要方向：人机交互、地位与信任。',
+        'res.trust.title': 'AI 使用与信任', 'res.trust.status': '投稿 JESP 审稿中',
+        'res.trust.b1': '八项大规模研究（N = 4,994），探讨 AI 使用如何影响信任。',
+        'res.trust.b2': '文献、Stata/R 分析与量表开发。',
+        'res.status.title': 'AI 与地位', 'res.status.label': '工作论文',
+        'res.status.b1': '个人采用 AI 如何改变组织中的能力与地位感知。',
+        'res.status.b2': '调查实验：能力中介与规范同化调节。',
+        'res.mapper.title': 'AI 增强群组动态图谱', 'res.mapper.label': '进行中项目',
+        'res.mapper.b1': '基于 Transformer 的多方对话分析与三维「对话地形」可视化。',
+        'res.esic.title': 'ESIC 量表（人际连接的情感支持）', 'res.esic.label': '进行中项目',
+        'res.esic.b1': '双因子量表（线上舒适与 AI 陪伴）；EFA/CFA（N > 1,300）。',
+        'edu.ic.org': '帝国理工学院', 'edu.ic.date': '2020年10月 — 2021年10月',
+        'edu.ic.degree': '伦敦 · 通信与信号处理硕士（Merit）',
+        'edu.ic.b1': '论文：多普勒雷达信号处理（MATLAB + Microwave Studio）。',
+        'edu.leeds.org': '利兹大学', 'edu.leeds.date': '2016年9月 — 2020年7月',
+        'edu.leeds.degree': '电子电气工程学士（一等）；西南交通大学双学位',
+        'edu.leeds.b1': '研究：机器翻译演进（规则系统至 Transformer）。',
+        'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
+        'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
+        'pres.p3': '参会：第七届亚洲管理研究联盟 AMRC（2025年5月）。',
+        'skills.prog': '编程：Python、R、Stata、SQL、MATLAB、C++、LaTeX、HTML/JavaScript。',
+        'skills.lang': '语言：普通话（母语）、英语（流利）、法语（流利）、粤语（初学）。',
+        'honors.t1': '考试：GRE (V159, Q169, AWA 4.5)；IELTS 7.5。',
+        'honors.t2': '证书：PMP；华为认证云服务解决方案架构师。',
+        'honors.t3': '荣誉：帝国理工学生代表；利兹跨文化大使。',
+        'footer.note': 'xjhuang.com/home — 公开主页。group.xjhuang.com — ACTR Lab（控制台/管理/手册需登录）。'
+    },
+    'zh-Hant': {
+        'nav.home': '主頁', 'nav.dashboard': '控制台', 'nav.admin': '管理', 'nav.manual': '手冊', 'nav.login': '登入',
+        'hero.name': 'Xinjie (Monica) Huang',
+        'hero.lab': 'ACTR Lab · 香港科技大學',
+        'hero.tagline': '研究助理 · 人機互動',
+        'hero.location': '香港',
+        'hero.siteNote': '本頁為 xjhuang.com 公開個人主頁，無需登入。ACTR 研究工具在 group.xjhuang.com，控制台、管理與登入需註冊／管理員帳號。',
+        'apps.title': '研究與教學平台',
+        'apps.lead': '與 HKUST ACTR Lab 共同開發。點擊下方卡片進入各站點。',
+        'apps.chatbot.title': 'Chatbot App',
+        'apps.chatbot.desc': '一對一與課堂聊天機器人，用於教學與研究；曾亮相港科大圖書館 GenAI 系列活動。',
+        'apps.group.title': 'AI + 人類群組聊天',
+        'apps.group.desc': '多人群組實驗，配置 AI 人設。',
+        'apps.game.title': '囚徒困境 + AI',
+        'apps.game.desc': '面向商科學生的 AI 談判博弈進階版。',
+        'apps.open': '打開應用 →', 'apps.openPlatform': '打開平台 →', 'apps.openAdmin': '打開管理端 →',
+        'toc.experience': '經歷', 'toc.research': '研究', 'toc.education': '教育', 'toc.skills': '技能',
+        'sec.experience': '工作經歷', 'sec.interests': '研究方向', 'sec.research': '論文與項目',
+        'sec.education': '教育背景', 'sec.presentations': '會議報告', 'sec.skills': '技能與語言', 'sec.honors': '榮譽與證書',
+        'exp.hkust.org': '香港科技大學', 'exp.hkust.date': '2025年4月 — 至今',
+        'exp.hkust.role': '香港 · 研究助理',
+        'exp.hkust.b1': '文獻綜述、Stata/R 定量分析、質性方法與量表開發等研究支持。',
+        'exp.hkust.b2': '協助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 與 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 資助申請。',
+        'exp.hkust.b3': '開展機構（高校等）AI 應用的質性與定量研究。',
+        'exp.hkust.b4': '參與港科大圖書館 GenAI 文獻工具項目。',
+        'exp.hkust.b5': '搭建並維護 ACTR Lab 平台（Chatbot、群組聊天、囚徒困境遊戲）。',
+        'exp.cmcc.org': '中國移動國際有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
+        'exp.cmcc.role': '香港與深圳 · 技術顧問',
+        'exp.cmcc.b1': '數位轉型：AI、雲與 ERP。',
+        'exp.cmcc.b2': '協調 80+ 企業級基礎設施項目；內部數位化培訓講師。',
+        'interests.text': '主要方向：人機互動、地位與信任。',
+        'res.trust.title': 'AI 使用與信任', 'res.trust.status': '投稿 JESP 審稿中',
+        'res.trust.b1': '八項大規模研究（N = 4,994），探討 AI 使用如何影響信任。',
+        'res.trust.b2': '文獻、Stata/R 分析與量表開發。',
+        'res.status.title': 'AI 與地位', 'res.status.label': '工作論文',
+        'res.status.b1': '個人採用 AI 如何改變組織中的能力與地位感知。',
+        'res.status.b2': '調查實驗：能力中介與規範同化調節。',
+        'res.mapper.title': 'AI 增強群組動態圖譜', 'res.mapper.label': '進行中項目',
+        'res.mapper.b1': '基於 Transformer 的多方對話分析與三維「對話地形」視覺化。',
+        'res.esic.title': 'ESIC 量表（人際連結的情感支持）', 'res.esic.label': '進行中項目',
+        'res.esic.b1': '雙因子量表（線上舒適與 AI 陪伴）；EFA/CFA（N > 1,300）。',
+        'edu.ic.org': '帝國理工學院', 'edu.ic.date': '2020年10月 — 2021年10月',
+        'edu.ic.degree': '倫敦 · 通信與信號處理碩士（Merit）',
+        'edu.ic.b1': '論文：都卜勒雷達信號處理（MATLAB + Microwave Studio）。',
+        'edu.leeds.org': '利茲大學', 'edu.leeds.date': '2016年9月 — 2020年7月',
+        'edu.leeds.degree': '電子電氣工程學士（一等）；西南交通大學雙學位',
+        'edu.leeds.b1': '研究：機器翻譯演進（規則系統至 Transformer）。',
+        'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
+        'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
+        'pres.p3': '參會：第七屆亞洲管理研究聯盟 AMRC（2025年5月）。',
+        'skills.prog': '程式：Python、R、Stata、SQL、MATLAB、C++、LaTeX、HTML/JavaScript。',
+        'skills.lang': '語言：普通話（母語）、英語（流利）、法語（流利）、粵語（初學）。',
+        'honors.t1': '考試：GRE (V159, Q169, AWA 4.5)；IELTS 7.5。',
+        'honors.t2': '證書：PMP；華為認證雲服務解決方案架構師。',
+        'honors.t3': '榮譽：帝國理工學生代表；利茲跨文化大使。',
+        'footer.note': 'xjhuang.com/home — 公開主頁。group.xjhuang.com — ACTR Lab（控制台／管理／手冊需登入）。'
+    }
+};
+
+function applyHomeLang(lang) {
+    const pack = HOME_I18N[lang] || HOME_I18N.en;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (pack[key] != null) el.textContent = pack[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        if (pack[key] != null) el.innerHTML = pack[key];
+    });
+    document.body.classList.remove('lang-en', 'lang-zh-Hans', 'lang-zh-Hant');
+    document.body.classList.add('lang-' + lang);
+    document.documentElement.lang = lang === 'zh-Hans' ? 'zh-CN' : lang === 'zh-Hant' ? 'zh-HK' : 'en';
+    document.querySelectorAll('.lang-switch button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    try { localStorage.setItem('homeLang', lang); } catch (_) {}
+}
+
+document.querySelectorAll('.lang-switch button').forEach(btn => {
+    btn.addEventListener('click', () => applyHomeLang(btn.dataset.lang));
+});
+
+(function initLang() {
+    let lang = 'en';
+    try { lang = localStorage.getItem('homeLang') || lang; } catch (_) {}
+    if (!HOME_I18N[lang]) lang = 'en';
+    applyHomeLang(lang);
+})();
+</script>
 </body>
 </html>
