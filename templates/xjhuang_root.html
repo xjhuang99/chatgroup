@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>… — xjhuang.com</title>
     <link rel="canonical" href="https://xjhuang.com/home">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Inter:wght@400;600&display=swap">
     <link rel="stylesheet" href="/static/theme.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,8 +15,6 @@
             color: #e8eaf0;
             overflow-x: hidden;
         }
-        body.lang-zh-Hans { font-family: "PingFang SC", sans-serif; }
-        body.lang-zh-Hant { font-family: "PingFang TC", sans-serif; }
 
         .cosmos {
             position: fixed;
@@ -67,10 +65,9 @@
             z-index: 1;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 48px 24px 40px;
+            padding: 48px 24px 72px;
         }
 
         .quote-block {
@@ -88,61 +85,26 @@
             letter-spacing: 0.02em;
             text-shadow: 0 2px 24px rgba(0,0,0,0.4);
         }
-        body.lang-zh-Hans .quote-block blockquote,
-        body.lang-zh-Hant .quote-block blockquote {
-            font-family: inherit;
-            font-style: normal;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-        }
-        .quote-block cite {
-            display: block;
-            margin-top: 18px;
-            font-size: 0.9375rem;
-            font-style: normal;
-            font-weight: 600;
-            color: rgba(200, 190, 220, 0.85);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
 
         .home-link {
-            margin-top: 48px;
-            font-size: 0.8125rem;
-            color: rgba(200, 205, 220, 0.55);
-            animation: fadeUp 1.2s ease-out 0.35s both;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 28px;
+            z-index: 2;
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(200, 205, 220, 0.38);
+            animation: fadeUp 1.6s ease-out 0.5s both;
         }
         .home-link a {
-            color: rgba(245, 200, 150, 0.75);
+            color: inherit;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 400;
+            letter-spacing: 0.04em;
         }
         .home-link a:hover {
-            color: #f5c896;
-            text-decoration: underline;
-        }
-
-        .lang-switch {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 28px;
-        }
-        .lang-switch button {
-            padding: 4px 10px;
-            border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 6px;
-            background: rgba(255,255,255,0.06);
-            font-size: 0.78rem;
-            font-weight: 700;
-            cursor: pointer;
-            color: rgba(232, 234, 240, 0.8);
-            font-family: inherit;
-        }
-        .lang-switch button.active {
-            background: rgba(230, 126, 34, 0.25);
-            border-color: rgba(230, 126, 34, 0.6);
-            color: #f5c896;
+            color: rgba(245, 200, 150, 0.7);
         }
 
         @keyframes fadeUp {
@@ -151,7 +113,7 @@
         }
     </style>
 </head>
-<body class="lang-en" id="rootBody">
+<body>
 <div class="cosmos" aria-hidden="true">
     <canvas id="starCanvas"></canvas>
     <div class="milky-way"></div>
@@ -160,66 +122,13 @@
 </div>
 <div class="page">
     <header class="quote-block">
-        <blockquote data-i18n="quote">Wonder is the beginning of wisdom.</blockquote>
-        <cite data-i18n="quoteAuthor">— Socrates</cite>
+        <blockquote>Wonder is the beginning of wisdom.</blockquote>
     </header>
-
-    <p class="home-link">
-        <a href="/home" data-i18n="homeLink">Take me to /home</a>
-    </p>
-
-    <div class="lang-switch" role="group" aria-label="Language">
-        <button type="button" data-lang="zh-Hans">简体</button>
-        <button type="button" data-lang="en" class="active">EN</button>
-        <button type="button" data-lang="zh-Hant">繁體</button>
-    </div>
 </div>
+<p class="home-link">
+    <a href="/home">Take me to /home</a>
+</p>
 <script>
-const ROOT_I18N = {
-    en: {
-        quote: 'Wonder is the beginning of wisdom.',
-        quoteAuthor: '— Socrates',
-        homeLink: 'Take me to /home',
-    },
-    'zh-Hans': {
-        quote: '惊奇是智慧的开始。',
-        quoteAuthor: '—— 苏格拉底',
-        homeLink: '带我去 /home',
-    },
-    'zh-Hant': {
-        quote: '驚奇是智慧的開始。',
-        quoteAuthor: '—— 蘇格拉底',
-        homeLink: '帶我去 /home',
-    },
-};
-
-function applyLang(code) {
-    const pack = ROOT_I18N[code] || ROOT_I18N.en;
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (pack[key] == null) return;
-        el.textContent = pack[key];
-    });
-    document.body.classList.remove('lang-en', 'lang-zh-Hans', 'lang-zh-Hant');
-    document.body.classList.add('lang-' + code);
-    document.documentElement.lang = code === 'zh-Hans' ? 'zh-CN' : code === 'zh-Hant' ? 'zh-HK' : 'en';
-    document.querySelectorAll('.lang-switch button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.lang === code);
-    });
-    try { localStorage.setItem('homeLang', code); } catch (_) {}
-}
-
-document.querySelectorAll('.lang-switch button').forEach(btn => {
-    btn.addEventListener('click', () => applyLang(btn.dataset.lang));
-});
-
-(function init() {
-    try {
-        const saved = localStorage.getItem('homeLang');
-        if (saved && ROOT_I18N[saved]) applyLang(saved);
-    } catch (_) {}
-})();
-
 (function initStarfield() {
     const canvas = document.getElementById('starCanvas');
     if (!canvas) return;
