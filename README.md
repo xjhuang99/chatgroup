@@ -14,6 +14,7 @@ python main.py
 python3 -m unittest discover -s tests -v
 ```
 
+- **Home (profile):** http://localhost:8000/home
 - **Admin:** http://localhost:8000/admin
 - **Dashboard:** http://localhost:8000/dashboard
 - **Qualtrics participant chat:** http://localhost:8000/embed.html

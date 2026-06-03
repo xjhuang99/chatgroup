@@ -12,6 +12,12 @@ async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
+@router.get("/home", response_class=HTMLResponse)
+async def home_page(request: Request):
+    """Public profile / CV-style intro (no login required)."""
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     if not check_auth(request):

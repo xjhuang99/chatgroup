@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home — Monica Xinjie Huang</title>
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        body { line-height: 1.65; }
+        .page {
+            max-width: 920px;
+            margin: calc(var(--header-height) + 14px) auto 48px;
+            padding: 0 20px;
+        }
+        .hero {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px 32px;
+            background: var(--white);
+            border-radius: 14px;
+            padding: 28px 32px;
+            border: 1px solid var(--gray-300);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+        }
+        .hero-photo {
+            flex-shrink: 0;
+        }
+        .hero-photo img {
+            width: 148px;
+            height: 148px;
+            object-fit: cover;
+            object-position: center top;
+            border-radius: 14px;
+            border: 3px solid var(--orange-pale);
+            box-shadow: var(--shadow-md);
+        }
+        .hero-text { flex: 1; min-width: 240px; }
+        .hero h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+            letter-spacing: 0.02em;
+        }
+        .hero .name-alt {
+            font-size: var(--fs-sm);
+            color: var(--gray-500);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .hero .tagline {
+            font-size: var(--fs-md);
+            color: var(--gray-700);
+            margin-bottom: 12px;
+        }
+        .contact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            font-size: var(--fs-sm);
+            color: var(--gray-700);
+        }
+        .contact a { color: var(--orange-dark); font-weight: 600; text-decoration: none; }
+        .contact a:hover { text-decoration: underline; }
+
+        .app-guide {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 24px 26px 28px;
+            margin-bottom: 20px;
+            border: 1px solid var(--gray-300);
+            box-shadow: var(--shadow-sm);
+        }
+        .app-guide h2 {
+            font-size: var(--fs-md);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--orange-dark);
+            margin-bottom: 6px;
+        }
+        .app-guide .guide-lead {
+            font-size: var(--fs-sm);
+            color: var(--gray-700);
+            margin-bottom: 20px;
+        }
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .app-card {
+            display: flex;
+            flex-direction: column;
+            min-height: 168px;
+            padding: 20px 22px 18px;
+            border-radius: 12px;
+            border: 2px solid var(--gray-300);
+            background: linear-gradient(180deg, var(--white) 0%, var(--gray-100) 100%);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        a.app-card:hover {
+            border-color: var(--orange);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(230, 126, 34, 0.18);
+        }
+        .app-card.soon {
+            cursor: default;
+            opacity: 0.92;
+            border-style: dashed;
+            background: var(--gray-100);
+        }
+        .app-card.soon:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: var(--gray-300);
+        }
+        .app-card .app-icon {
+            font-size: 2rem;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        .app-card .app-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 8px;
+        }
+        .app-card .app-desc {
+            flex: 1;
+            font-size: var(--fs-sm);
+            color: var(--gray-700);
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+        .app-card .app-cta {
+            font-size: var(--fs-sm);
+            font-weight: 800;
+            color: var(--orange-dark);
+        }
+        a.app-card:hover .app-cta { text-decoration: underline; }
+        .app-card.soon .app-cta { color: var(--gray-500); }
+
+        .section {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 22px 26px;
+            margin-bottom: 16px;
+            border: 1px solid var(--gray-300);
+            box-shadow: var(--shadow-sm);
+        }
+        .section h2 {
+            font-size: var(--fs-md);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--orange-dark);
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gray-100);
+        }
+        .toc-jump {
+            font-size: var(--fs-sm);
+            margin-bottom: 16px;
+        }
+        .toc-jump a {
+            color: var(--orange-dark);
+            font-weight: 600;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+        .toc-jump a:hover { text-decoration: underline; }
+        .entry { margin-bottom: 18px; }
+        .entry:last-child { margin-bottom: 0; }
+        .entry-head {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 4px 12px;
+            margin-bottom: 4px;
+        }
+        .entry-title { font-weight: 800; color: var(--gray-900); }
+        .entry-meta { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
+        .entry-sub { font-size: var(--fs-sm); color: var(--gray-700); margin-bottom: 6px; }
+        ul.bullets {
+            padding-left: 1.25rem;
+            margin: 0;
+            font-size: var(--fs-md);
+            color: #444;
+        }
+        ul.bullets li { margin-bottom: 6px; }
+        ul.bullets a { color: var(--orange-dark); font-weight: 600; }
+        .research-title { font-weight: 800; color: var(--gray-900); }
+        .research-status { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
+        .note {
+            font-size: var(--fs-sm);
+            color: var(--gray-500);
+            margin-top: 16px;
+            text-align: center;
+        }
+        @media (max-width: 560px) {
+            .hero { justify-content: center; text-align: center; }
+            .contact { justify-content: center; }
+            .hero-photo img { width: 128px; height: 128px; }
+        }
+    </style>
+</head>
+<body class="has-top-nav">
+
+<header class="nav-header">
+    <a href="/home" class="nav-logo">ACTR</a>
+    <nav class="nav-links">
+        <a href="/home" class="active">Home</a>
+        <a href="/">Dashboard</a>
+        <a href="/admin">Admin</a>
+        <a href="/manual">Manual</a>
+        <a href="/login">Login</a>
+    </nav>
+</header>
+
+<main class="page">
+    <section class="hero">
+        <div class="hero-photo">
+            <img src="/static/images/monica-huang.png" alt="Monica Xinjie Huang" width="148" height="148">
+        </div>
+        <div class="hero-text">
+            <h1>Monica Xinjie HUANG</h1>
+            <p class="name-alt">黄欣洁 · Xinjie Huang</p>
+            <p class="tagline">Research Assistant · Human–AI Interaction · HKUST</p>
+            <div class="contact">
+                <a href="mailto:xinjiehuang@ust.hk">xinjiehuang@ust.hk</a>
+                <span>+852 5142 7267</span>
+                <span>Hong Kong</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="app-guide" id="apps">
+        <h2>Research &amp; Learning Platforms</h2>
+        <p class="guide-lead">Click a card to open the app. Researchers sign in on ACTR Dashboard to create sessions and monitor live rooms.</p>
+        <div class="app-grid">
+            <a class="app-card" href="https://app.bitterlylab.com/home" rel="noopener" target="_blank">
+                <span class="app-icon" aria-hidden="true">💬</span>
+                <span class="app-title">Chatbot App</span>
+                <span class="app-desc">One-on-one and classroom chatbots for teaching and research; featured in HKUST Library GenAI programming.</span>
+                <span class="app-cta">Open app →</span>
+            </a>
+            <a class="app-card" href="https://group.bitterlylab.com/" rel="noopener">
+                <span class="app-icon" aria-hidden="true">👥</span>
+                <span class="app-title">AI + Human Group Chat (ACTR)</span>
+                <span class="app-desc">Multi-party group experiments with AI personas, Qualtrics embed, matching, and usage caps — this site.</span>
+                <span class="app-cta">Open platform →</span>
+            </a>
+            <a class="app-card" href="/login">
+                <span class="app-icon" aria-hidden="true">📊</span>
+                <span class="app-title">ACTR Dashboard</span>
+                <span class="app-desc">Create sessions, configure bots, monitor rooms, export transcripts, and manage API budgets.</span>
+                <span class="app-cta">Sign in →</span>
+            </a>
+            <div class="app-card soon" role="presentation">
+                <span class="app-icon" aria-hidden="true">🤝</span>
+                <span class="app-title">Prisoner’s Dilemma + AI</span>
+                <span class="app-desc">Advanced negotiation game with AI for business students — launching in an upcoming term.</span>
+                <span class="app-cta">Coming soon</span>
+            </div>
+        </div>
+    </section>
+
+    <p class="toc-jump">
+        <a href="#experience">Experience</a>
+        <a href="#research">Research</a>
+        <a href="#education">Education</a>
+        <a href="#skills">Skills</a>
+    </p>
+
+    <section class="section" id="experience">
+        <h2>Professional Experience</h2>
+
+        <div class="entry">
+            <div class="entry-head">
+                <span class="entry-title">Hong Kong University of Science and Technology</span>
+                <span class="entry-meta">Apr 2025 — Present</span>
+            </div>
+            <div class="entry-sub">Hong Kong · Research Assistant</div>
+            <ul class="bullets">
+                <li>Supported research through literature reviews, quantitative analysis (Stata/R), qualitative work, and scale development.</li>
+                <li>Helped prepare applications for <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> and large TLIP funding initiatives.</li>
+                <li>Assisted a literature-review tool featured in <a href="https://library.hkust.edu.hk/news-events/news/mastering-research-genai-age" rel="noopener" target="_blank">Mastering Research in the GenAI Age</a> (HKUST Library).</li>
+                <li>Built and maintained the platforms in the guide above (Chatbot App, ACTR group chat, and upcoming PD game).</li>
+            </ul>
+        </div>
+
+        <div class="entry">
+            <div class="entry-head">
+                <span class="entry-title">China Mobile International Limited</span>
+                <span class="entry-meta">Sep 2021 — Dec 2024</span>
+            </div>
+            <div class="entry-sub">Hong Kong &amp; Shenzhen · Technical Consultant</div>
+            <ul class="bullets">
+                <li><strong>Digital transformation:</strong> Led initiatives integrating AI, cloud, and ERP digitalization.</li>
+                <li><strong>Strategic management:</strong> Coordinated 80+ enterprise infrastructure projects; internal trainer on digital management.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="section" id="interests">
+        <h2>Research Interests</h2>
+        <p><strong>Primary areas:</strong> Human–AI interaction, status, and trust.</p>
+    </section>
+
+    <section class="section" id="research">
+        <h2>Selected Research Papers &amp; Projects</h2>
+
+        <div class="entry">
+            <p><span class="research-title">AI Use and Trust</span> — <span class="research-status">Under review at <em>Journal of Experimental Social Psychology</em></span></p>
+            <ul class="bullets">
+                <li>Co-designed eight large-scale studies (total <em>N</em> = 4,994) on how AI use shapes trust.</li>
+                <li>Literature review, Stata/R analyses, and scale development for AI-related trust measures.</li>
+            </ul>
+        </div>
+
+        <div class="entry">
+            <p><span class="research-title">AI and Status</span> — <span class="research-status">Working paper</span></p>
+            <ul class="bullets">
+                <li>How individual AI adoption reshapes perceptions of <strong>competence and status</strong> in organizations.</li>
+                <li>Survey experiments on perceived competence and normative assimilation.</li>
+            </ul>
+        </div>
+
+        <div class="entry">
+            <p><span class="research-title">AI-Augmented Group Dynamics Mapper</span> — <span class="research-status">Working project</span></p>
+            <ul class="bullets">
+                <li>Transformer-based pipeline for multi-party chats and 3D “conversation terrain” visualizations, built on <a href="https://group.bitterlylab.com/" rel="noopener">ACTR group chat</a>.</li>
+            </ul>
+        </div>
+
+        <div class="entry">
+            <p><span class="research-title">ESIC Scale (Emotional Support for Interpersonal Connections)</span> — <span class="research-status">Working project</span></p>
+            <ul class="bullets">
+                <li>Two-factor scale (comfort with online interaction &amp; AI companions); pilot qual, EFA/CFA (<em>N</em> &gt; 1,300).</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="section" id="education">
+        <h2>Education</h2>
+
+        <div class="entry">
+            <div class="entry-head">
+                <span class="entry-title">Imperial College London</span>
+                <span class="entry-meta">Oct 2020 — Oct 2021</span>
+            </div>
+            <div class="entry-sub">London, UK · MSc Communications and Signal Processing (Merit)</div>
+            <ul class="bullets">
+                <li><strong>Thesis:</strong> Doppler radar signal processing — MATLAB + Microwave Studio.</li>
+            </ul>
+        </div>
+
+        <div class="entry">
+            <div class="entry-head">
+                <span class="entry-title">University of Leeds</span>
+                <span class="entry-meta">Sep 2016 — Jul 2020</span>
+            </div>
+            <div class="entry-sub">Leeds, UK · BEng EEE (First Class Honours); dual degree with Southwest Jiaotong University</div>
+            <ul class="bullets">
+                <li><strong>Research:</strong> Machine translation evolution — rule-based to Transformer.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="section" id="presentations">
+        <h2>Conference Presentations</h2>
+        <ul class="bullets">
+            <li><strong>HKUST CEI Workshop:</strong> “Reimagining Education: A Playground for GenAI Collaboration” (Nov 2025).</li>
+            <li><strong>HKUST CEI Workshop:</strong> “Learning Lab Series: AI Sandbox for Educators” (Apr 2025).</li>
+            <li><strong>Attendee:</strong> 7th Asian Management Research Consortium (AMRC) (May 2025).</li>
+        </ul>
+    </section>
+
+    <section class="section" id="skills">
+        <h2>Skills &amp; Languages</h2>
+        <ul class="bullets">
+            <li><strong>Programming:</strong> Python, R, Stata, SQL, MATLAB, C++, LaTeX, HTML/JavaScript.</li>
+            <li><strong>Languages:</strong> Mandarin (native), English (fluent), French (fluent), Cantonese (beginner).</li>
+        </ul>
+    </section>
+
+    <section class="section" id="honors">
+        <h2>Honors &amp; Certifications</h2>
+        <ul class="bullets">
+            <li><strong>Tests:</strong> GRE (V159, Q169, AWA 4.5); IELTS 7.5.</li>
+            <li><strong>Certifications:</strong> PMP; Huawei Certified Cloud Service Solutions Architect.</li>
+            <li><strong>Awards:</strong> Student Representative (Imperial College); Intercultural Ambassador (University of Leeds).</li>
+        </ul>
+    </section>
+
+    <p class="note">CV sections below the platform guide. <a href="/login">Sign in</a> for researcher or admin access.</p>
+</main>
+</body>
+</html>
