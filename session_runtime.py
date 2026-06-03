@@ -24,12 +24,11 @@ def get_bot_names(session: SessionConfig) -> Set[str]:
 
 
 def get_human_display_names(session: SessionConfig, group_info: Dict) -> List[str]:
-    bot_names = get_bot_names(session)
+    """Display names for matched humans (group members are always human participant IDs)."""
     names = []
     for uid in group_info.get("members", []):
         dn = group_info.get("member_names", {}).get(uid, uid)
-        if dn not in bot_names:
-            names.append(dn)
+        names.append(dn)
     return names
 
 

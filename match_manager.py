@@ -738,6 +738,17 @@ class MatchManager:
                         return grp
         return None
 
+    def expected_human_display_names(self, session: SessionConfig) -> List[str]:
+        """Full human roster labels for this session (including slots still waiting in queue)."""
+        pool = list(session.participant_names or [])
+        min_h, _ = resolve_human_group_bounds(session)
+        if pool:
+            if len(pool) >= min_h:
+                return list(pool[:min_h])
+            extra = [f"Participant {i + 1}" for i in range(len(pool), min_h)]
+            return pool + extra
+        return [f"Participant {i + 1}" for i in range(min_h)]
+
     def get_queue_progress(
         self, session_id: str, uid: str, condition: Optional[str] = None
     ) -> Optional[Dict]:
@@ -753,6 +764,7 @@ class MatchManager:
             "min_humans_per_group": min_h,
             "max_humans_per_group": max_h,
             "ai_teammates_ready": ai_count,
+            "teammate_display_names": self.expected_human_display_names(session),
         }
 
     def _remove_uid_from_forming(self, forming: List[List[str]], uid: str) -> None:
@@ -773,6 +785,26 @@ class MatchManager:
             return
         for forming in self.forming_stratified[session_id].values():
             self._remove_uid_from_forming(forming, uid)
+
+    def ensure_group_member_names(self, session_id: str, group_info: Dict) -> None:
+        """Assign display names to all matched humans so roster APIs work before WebSocket join."""
+        session = self.sessions.get(session_id)
+        if not session:
+            return
+        pool = list(session.participant_names or [])
+        if "member_names" not in group_info:
+            group_info["member_names"] = {}
+        taken = set(group_info["member_names"].values())
+        for uid in group_info.get("members") or []:
+            if uid in group_info["member_names"]:
+                taken.add(group_info["member_names"][uid])
+                continue
+            available = [n for n in pool if n not in taken]
+            if available:
+                group_info["member_names"][uid] = available[0]
+                taken.add(available[0])
+            else:
+                group_info["member_names"][uid] = uid
 
     def create_group(
         self, session_id: str, group_id: str, members: List[str] = None, condition: Optional[str] = None
@@ -800,6 +832,8 @@ class MatchManager:
             }
             if session_config and session_config.bots and getattr(session_config, "condition_enabled", True):
                 assign_group_disclosure(session_config.bots, condition, group_info)
+            if members:
+                self.ensure_group_member_names(session_id, group_info)
             self.active_rooms[session_id][group_id] = group_info
             if members:
                 for muid in members:

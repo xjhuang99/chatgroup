@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from db.database import get_room_history
 from match_manager import match_manager
+from session_runtime import get_human_display_names
 
 router = APIRouter(tags=["groups"])
 
@@ -11,9 +12,13 @@ async def get_group_info_api(session_id: str, group_id: str):
     group_info = match_manager.get_group_info(session_id, group_id)
     if not group_info:
         return {"member_names": {}, "members": []}
+    match_manager.ensure_group_member_names(session_id, group_info)
+    session = match_manager.get_session(session_id)
+    humans = get_human_display_names(session, group_info) if session else []
     return {
         "member_names": group_info.get("member_names", {}),
         "members": group_info.get("members", []),
+        "human_display_names": humans,
     }
 
 

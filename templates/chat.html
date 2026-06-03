@@ -251,8 +251,8 @@
     }
 
     const turnBanner = document.getElementById('turn-banner');
-    // Track all known participants (display names) - ONLY real users, not bots
     const knownMembers = new Set();
+    let rosterPollTimer = null;
 
     function updateMembersDisplay() {
         const membersList = [...knownMembers];
@@ -407,6 +407,24 @@
         }
     }
 
+    function applyHumanRoster(humanNames) {
+        const list = [...(humanNames || [])];
+        if (myDisplayName && !list.includes(myDisplayName)) {
+            list.push(myDisplayName);
+        }
+        const botNameSet = new Set(activeBots.map(b => b.name).filter(Boolean));
+        [...knownMembers].forEach(name => {
+            if (!botNameSet.has(name)) knownMembers.delete(name);
+        });
+        list.forEach(name => {
+            if (name) knownMembers.add(name);
+        });
+        activeBots.forEach(b => {
+            if (b.name) knownMembers.add(b.name);
+        });
+        updateMembersDisplay();
+    }
+
     /* ---- Load existing members in the room ---- */
     async function loadExistingMembers() {
         try {
@@ -414,23 +432,31 @@
             if (!res.ok) return;
             const data = await res.json();
             const memberNames = data.member_names || {};
+            const memberUids = data.members || [];
+            let humanNames = data.human_display_names;
+            if (!humanNames || !humanNames.length) {
+                humanNames = memberUids.map(uid => memberNames[uid] || uid).filter(Boolean);
+            }
+            applyHumanRoster(humanNames);
+            return humanNames.length;
+        } catch (e) {
+            console.error('Failed to load existing members', e);
+            return 0;
+        }
+    }
 
-            // Collect real user display names
-            Object.values(memberNames).forEach(name => {
-                if (name && !knownMembers.has(name)) {
-                    knownMembers.add(name);
-                }
-            });
-
-            // Include configured personas in the member list
-            activeBots.forEach(b => {
-                if (b.name && !knownMembers.has(b.name)) {
-                    knownMembers.add(b.name);
-                }
-            });
-
-            updateMembersDisplay();
-        } catch (e) { console.error('Failed to load existing members', e); }
+    function startRosterPoll() {
+        if (rosterPollTimer) return;
+        rosterPollTimer = setInterval(async () => {
+            const n = await loadExistingMembers();
+            const expected = sessionConfig.min_humans_per_group
+                || sessionConfig.group_size
+                || 0;
+            if (expected && n >= expected) {
+                clearInterval(rosterPollTimer);
+                rosterPollTimer = null;
+            }
+        }, 2000);
     }
 
     /* ---- WebSocket ---- */
@@ -444,13 +470,16 @@
         wsStatus.textContent = 'Online';
         statusDot.style.background = '#2ecc71';
         await loadSessionConfig();
-
-        // Load existing members in the room
         await loadExistingMembers();
-
-        // Request display name from server
+        startRosterPoll();
         ws.send(JSON.stringify({type: 'get_display_name'}));
     };
+
+    (async () => {
+        await loadSessionConfig();
+        await loadExistingMembers();
+        startRosterPoll();
+    })();
 
     ws.onmessage = (event) => {
         let payload;
@@ -466,6 +495,7 @@
         if (payload.type === 'display_name') {
             // Server tells us our display name
             myDisplayName = payload.name;
+            loadExistingMembers();
             loadChatHistory();
             // Show notification
             const notif = document.createElement('div');

@@ -188,7 +188,6 @@
                     <input type="number" id="maxHumans" value="1" min="1" max="20" title="When a forming group is full, the next participant joins another group">
                 </div>
             </div>
-            <p class="text-sm text-muted" style="margin:-8px 0 12px;">Min = max → <strong>fixed</strong> group size. Min &lt; max → start at min; up to max per room; overflow goes to the next forming group.</p>
             <div class="grid-2">
                 <div class="form-group">
                     <label>Session mode</label>
@@ -603,6 +602,7 @@ function renderBots() {
             </div>
 
             <div class="section-label">Reply length (words)</div>
+            <p class="text-sm text-muted" style="margin:-4px 0 10px;"><strong>Length mix On</strong> — each reply picks a random target word count between Min and Max (written into the model prompt). <strong>Off</strong> — every reply uses Max words. This does not affect human matching (Min/Max humans above).</p>
             <div class="grid-3">
                 <div class="form-group">
                     <label>Length mix</label>

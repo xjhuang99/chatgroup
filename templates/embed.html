@@ -246,6 +246,7 @@
     const teamRoster = document.getElementById('team-roster');
 
     let activeBots = [];
+    let groupHumanNames = [];
     let myDisplayName = null;
     let qualtricsHandoffSent = false;
     let sessionEndedNormally = false;
@@ -301,6 +302,7 @@
         const matched = data.humans_matched ?? 0;
         const need = data.min_humans_per_group ?? 1;
         const aiN = data.ai_teammates_ready ?? 0;
+        const roster = data.teammate_display_names || [];
         onboardingSpinner.style.display = 'block';
         onboardingTitle.textContent = `Matched ${matched}/${need} participant${need === 1 ? '' : 's'} — please wait.`;
         let sub = 'Waiting for more participants to join your group.';
@@ -311,9 +313,13 @@
         onboardingSub.style.display = 'block';
         onboardingSubEn.style.display = 'none';
         wsStatus.textContent = `Matching… ${matched}/${need}`;
-        teamRoster.textContent = aiN > 0
-            ? `Humans ${matched}/${need} · ${aiN} AI teammate${aiN === 1 ? '' : 's'} ready`
-            : `Humans ${matched}/${need}`;
+        if (roster.length) {
+            teamRoster.textContent = `Your team (${need}): ${roster.join(', ')}`;
+        } else {
+            teamRoster.textContent = aiN > 0
+                ? `Humans ${matched}/${need} · ${aiN} AI teammate${aiN === 1 ? '' : 's'} ready`
+                : `Humans ${matched}/${need}`;
+        }
     }
 
     async function showAssignedOnboarding(displayName) {
@@ -350,23 +356,73 @@
         return bot.name;
     }
 
+    let rosterPollTimer = null;
+
+    async function loadGroupRoster() {
+        if (!sessionId || !groupId) return 0;
+        try {
+            const res = await fetch(`/api/groups/${encodeURIComponent(sessionId)}/${encodeURIComponent(groupId)}/info`);
+            if (!res.ok) return 0;
+            const data = await res.json();
+            let names = data.human_display_names || [];
+            if (!names.length) {
+                const memberNames = data.member_names || {};
+                names = (data.members || []).map(uid => memberNames[uid] || uid).filter(Boolean);
+            }
+            groupHumanNames = [...new Set(names)].sort((a, b) => a.localeCompare(b));
+            updateGroupRoster();
+            return groupHumanNames.length;
+        } catch (e) {
+            console.warn('Group roster load failed', e);
+            return 0;
+        }
+    }
+
+    function startRosterPoll() {
+        if (rosterPollTimer) return;
+        rosterPollTimer = setInterval(async () => {
+            const n = await loadGroupRoster();
+            const expected = sessionConfig.min_humans_per_group
+                || sessionConfig.group_size
+                || 0;
+            if (expected && n >= expected) {
+                clearInterval(rosterPollTimer);
+                rosterPollTimer = null;
+            }
+        }, 2000);
+    }
+
     function updateGroupRoster() {
         const parts = [];
+        const botNameSet = new Set(activeBots.map(b => b.name).filter(Boolean));
         activeBots.forEach(bot => {
             const label = formatTeammateLabel(bot);
             if (label) parts.push(label);
         });
-        if (myDisplayName) {
-            const botNames = activeBots.map(b => b.name);
-            if (botNames.includes(myDisplayName)) {
-                parts.push(`<span class="you" title="Your display name overlaps a teammate name — contact the researcher">${myDisplayName} (you)</span>`);
+        const humans = [...groupHumanNames];
+        if (myDisplayName && !humans.includes(myDisplayName) && !botNameSet.has(myDisplayName)) {
+            humans.push(myDisplayName);
+        }
+        humans.sort((a, b) => {
+            if (myDisplayName && a === myDisplayName) return 1;
+            if (myDisplayName && b === myDisplayName) return -1;
+            return a.localeCompare(b);
+        });
+        humans.forEach(name => {
+            if (myDisplayName && name === myDisplayName) {
+                if (botNameSet.has(myDisplayName)) {
+                    parts.push(`<span class="you" title="Your display name overlaps a teammate name — contact the researcher">${name} (you)</span>`);
+                } else {
+                    parts.push(`<span class="you">${name} (you)</span>`);
+                }
             } else {
-                parts.push(`<span class="you">${myDisplayName} (you)</span>`);
+                parts.push(name);
             }
-        } else if (sessionConfig.group_size) {
+        });
+        if (!humans.length && sessionConfig.group_size) {
             parts.push('<span style="opacity:0.85">you</span>');
         }
-        const nHumans = sessionConfig.group_size || 1;
+        const nHumans = humans.length || sessionConfig.group_size || 1;
         const total = activeBots.length + nHumans;
         teamRoster.innerHTML = parts.length
             ? `Your team (${total}): ${parts.join(', ')}`
@@ -658,7 +714,11 @@
                 };
                 mentionBar.appendChild(btn);
             });
-            updateGroupRoster();
+            if (groupId) {
+                await loadGroupRoster();
+            } else {
+                updateGroupRoster();
+            }
         } catch (e) {
             console.error('Config load error:', e);
         }
@@ -763,7 +823,7 @@
                     resolve(myDisplayName);
                 }
                 if (chatUiRevealed) {
-                    updateGroupRoster();
+                    loadGroupRoster();
                     setConnected(true);
                 }
                 return;
@@ -846,6 +906,7 @@
             if (matchWait > 0) await sleep(matchWait);
 
             await loadConfig();
+            await loadGroupRoster();
             await loadChatHistory();
 
             const displayName = await connectWebSocket(groupId);
@@ -853,8 +914,9 @@
 
             chatBox.className = '';
             revealMainChat(displayName);
+            startRosterPoll();
 
-            setTimeout(() => loadConfig().then(() => updateGroupRoster()), 400);
+            setTimeout(() => loadConfig().then(() => { loadGroupRoster(); startRosterPoll(); }), 400);
         } catch (err) {
             onboardingOverlay.classList.add('hidden');
             appWrapper.classList.remove('main-chat-hidden');

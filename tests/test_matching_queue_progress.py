@@ -33,6 +33,7 @@ class TestMatchingQueueProgress(unittest.TestCase):
         self.assertEqual(prog["humans_matched"], 1)
         self.assertEqual(prog["min_humans_per_group"], 2)
         self.assertEqual(prog["ai_teammates_ready"], 2)
+        self.assertEqual(prog["teammate_display_names"], ["Participant 1", "Participant 2"])
 
     def test_second_human_opens_room_humans_only(self):
         self.mm.add_to_queue(self.sid, "human_1")

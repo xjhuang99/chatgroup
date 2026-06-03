@@ -267,8 +267,8 @@
                     <tr><td>Delay (sec)</td><td>Per-persona wait before generating a reply (main spacing control; no separate session cooldown). Persona modes 2–4 add 0.5–2.5 s random jitter.</td></tr>
                     <tr><td>Typing (chars/sec)</td><td>Simulated typing delay before the message appears (1–6; preset 2).</td></tr>
                     <tr><td>Silence timeout (sec)</td><td>If the room is quiet this long, a persona may send a nudge (preset 50 s).</td></tr>
-                    <tr><td>Length mix</td><td>On — each reply targets a random word count between min and max. Off — always use max words.</td></tr>
-                    <tr><td>Min / max words</td><td>Target reply length. Max is also a hard ceiling if the model runs long (preset max 20).</td></tr>
+                    <tr><td>Length mix</td><td>Per <strong>persona</strong>, not group matching. <strong>On</strong> — before each AI reply the server draws one integer uniformly between Min and Max words and tells the model to stay within about that many words (replies vary in length). <strong>Off</strong> — every reply uses the Max word target. Does not change who is matched into a room.</td></tr>
+                    <tr><td>Min / max words</td><td>Word-count range for that persona’s replies. Max is also a loose safety ceiling if the model runs long (preset max 20). Only used when Length mix is On for the random draw; when Off, Min is ignored.</td></tr>
                     <tr><td>Temperature</td><td>0 = very steady, 1 = more varied (preset 0.7).</td></tr>
                     <tr><td>Emoji</td><td><strong>Off</strong> (preset) or <strong>On</strong> — allow occasional emojis in replies; when Off, the model is instructed not to use them and stray emoji are stripped.</td></tr>
                     <tr><td>Context (chars)</td><td>How much recent chat history is sent to the model (10,000–10,000,000; default 100,000).</td></tr>
