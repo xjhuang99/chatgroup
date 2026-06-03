@@ -7,6 +7,27 @@ from match_manager import match_manager, resolve_human_group_bounds
 router = APIRouter(tags=["matching"])
 
 
+def _waiting_match_payload(session, session_id: str, uid: str, condition: Optional[str]) -> dict:
+    min_h, max_h = resolve_human_group_bounds(session)
+    mode = session.assignment_mode if session else "fifo"
+    resp_condition = (
+        (condition or "_default") if getattr(session, "condition_enabled", True) else None
+    )
+    payload = {
+        "status": "waiting",
+        "session_id": session_id,
+        "assignment_mode": mode,
+        "condition": resp_condition,
+        "min_humans_per_group": min_h,
+        "max_humans_per_group": max_h,
+        "fixed_human_group_size": min_h == max_h,
+    }
+    progress = match_manager.get_queue_progress(session_id, uid, condition)
+    if progress:
+        payload.update(progress)
+    return payload
+
+
 @router.get("/api/match")
 async def match_user(
     session_id: str = Query(...),
@@ -40,26 +61,14 @@ async def match_user(
     group_id = match_manager.add_to_queue(session_id, uid, condition=match_condition)
     if group_id:
         return {"status": "matched", "session_id": session_id, "group_id": group_id}
-    session = match_manager.get_session(session_id)
-    mode = session.assignment_mode if session else "fifo"
-    resp_condition = (
-        (condition or "_default") if (session and getattr(session, "condition_enabled", True)) else None
-    )
-    min_h, max_h = resolve_human_group_bounds(session)
-    return {
-        "status": "waiting",
-        "assignment_mode": mode,
-        "condition": resp_condition,
-        "min_humans_per_group": min_h,
-        "max_humans_per_group": max_h,
-        "fixed_human_group_size": min_h == max_h,
-    }
+    return _waiting_match_payload(session, session_id, uid, match_condition)
 
 
 @router.get("/api/embed/status")
 async def embed_participant_status(
     session_id: str = Query(...),
     participant_id: str = Query(...),
+    condition: Optional[str] = Query(None),
 ):
     if participant_id in match_manager.user_locations:
         loc = match_manager.user_locations[participant_id]
@@ -71,6 +80,14 @@ async def embed_participant_status(
                 "participant_id": participant_id,
             }
     if match_manager.is_user_in_queue(session_id, participant_id):
+        session = match_manager.get_session(session_id)
+        match_condition = condition
+        if session and not getattr(session, "condition_enabled", True):
+            match_condition = None
+        if session:
+            payload = _waiting_match_payload(session, session_id, participant_id, match_condition)
+            payload["participant_id"] = participant_id
+            return payload
         return {"status": "waiting", "session_id": session_id, "participant_id": participant_id}
     return {"status": "not_joined", "session_id": session_id, "participant_id": participant_id}
 

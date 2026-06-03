@@ -287,7 +287,7 @@
         onboardingOverlay.classList.remove('hidden');
         onboardingSpinner.style.display = 'block';
         onboardingTitle.textContent = 'Matching you to a group…';
-        onboardingSub.textContent = 'Please wait a moment.';
+        onboardingSub.textContent = 'Looking for teammates…';
         onboardingSub.style.display = 'block';
         onboardingSubEn.style.display = 'none';
         onboardingCard.classList.remove('pop');
@@ -295,6 +295,25 @@
         statusDot.style.background = 'var(--gray-500)';
         document.getElementById('room-title').textContent = 'Study Chat';
         teamRoster.textContent = 'Please wait…';
+    }
+
+    function updateWaitingOnboarding(data) {
+        const matched = data.humans_matched ?? 0;
+        const need = data.min_humans_per_group ?? 1;
+        const aiN = data.ai_teammates_ready ?? 0;
+        onboardingSpinner.style.display = 'block';
+        onboardingTitle.textContent = `Matched ${matched}/${need} participant${need === 1 ? '' : 's'} — please wait.`;
+        let sub = 'Waiting for more participants to join your group.';
+        if (aiN > 0) {
+            sub = `AI teammate${aiN === 1 ? '' : 's'} (${aiN}) will join when the room opens.`;
+        }
+        onboardingSub.textContent = sub;
+        onboardingSub.style.display = 'block';
+        onboardingSubEn.style.display = 'none';
+        wsStatus.textContent = `Matching… ${matched}/${need}`;
+        teamRoster.textContent = aiN > 0
+            ? `Humans ${matched}/${need} · ${aiN} AI teammate${aiN === 1 ? '' : 's'} ready`
+            : `Humans ${matched}/${need}`;
     }
 
     async function showAssignedOnboarding(displayName) {
@@ -645,32 +664,58 @@
         }
     }
 
+    async function pollMatchOnce() {
+        let matchUrl = `/api/match?session_id=${encodeURIComponent(sessionId)}&uid=${encodeURIComponent(participantId)}`;
+        if (usesEmbedCondition() && condition) {
+            matchUrl += `&condition=${encodeURIComponent(condition)}`;
+        }
+        const res = await fetch(matchUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+
     async function waitForGroup() {
-        const existing = await fetch(
-            `/api/embed/status?session_id=${encodeURIComponent(sessionId)}&participant_id=${encodeURIComponent(participantId)}`
-        ).then(r => r.json()).catch(() => ({}));
+        let statusUrl = `/api/embed/status?session_id=${encodeURIComponent(sessionId)}&participant_id=${encodeURIComponent(participantId)}`;
+        if (usesEmbedCondition() && condition) {
+            statusUrl += `&condition=${encodeURIComponent(condition)}`;
+        }
+        const existing = await fetch(statusUrl).then(r => r.json()).catch(() => ({}));
         if (existing.status === 'matched' && existing.group_id) {
             return existing.group_id;
+        }
+        if (existing.status === 'waiting') {
+            updateWaitingOnboarding(existing);
+        }
+
+        const handleMatchData = (data) => {
+            if (data.status === 'session_closed' || data.status === 'session_not_found') {
+                throw new Error(data.message || 'This study session is unavailable.');
+            }
+            if (data.status === 'matched') {
+                return data.group_id;
+            }
+            if (data.status === 'waiting') {
+                updateWaitingOnboarding(data);
+            }
+            return null;
+        };
+
+        try {
+            const first = await pollMatchOnce();
+            const gid0 = handleMatchData(first);
+            if (gid0) return gid0;
+        } catch (e) {
+            throw e;
         }
 
         return new Promise((resolve, reject) => {
             const poll = setInterval(async () => {
                 try {
-                    let matchUrl = `/api/match?session_id=${encodeURIComponent(sessionId)}&uid=${encodeURIComponent(participantId)}`;
-                    if (usesEmbedCondition() && condition) {
-                        matchUrl += `&condition=${encodeURIComponent(condition)}`;
-                    }
-                    const res = await fetch(matchUrl);
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const data = await res.json();
-                    if (data.status === 'session_closed' || data.status === 'session_not_found') {
+                    const data = await pollMatchOnce();
+                    const gid = handleMatchData(data);
+                    if (gid) {
                         clearInterval(poll);
-                        reject(new Error(data.message || 'This study session is unavailable.'));
-                        return;
-                    }
-                    if (data.status === 'matched') {
-                        clearInterval(poll);
-                        resolve(data.group_id);
+                        resolve(gid);
                     }
                 } catch (e) {
                     clearInterval(poll);

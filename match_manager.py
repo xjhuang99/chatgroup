@@ -717,17 +717,46 @@ class MatchManager:
         return n
 
     def is_user_in_queue(self, session_id: str, uid: str) -> bool:
+        return self._forming_slot_for_uid(session_id, uid) is not None
+
+    def _forming_slot_for_uid(
+        self, session_id: str, uid: str, condition: Optional[str] = None
+    ) -> Optional[List[str]]:
         for grp in self.forming_fifo.get(session_id, []):
             if uid in grp:
-                return True
-        for forming in self.forming_stratified.get(session_id, {}).values():
+                return grp
+        buckets = self.forming_stratified.get(session_id, {})
+        if condition is not None:
+            forming = buckets.get(self._normalize_condition(condition), [])
             for grp in forming:
                 if uid in grp:
-                    return True
-        return False
+                    return grp
+        else:
+            for forming in buckets.values():
+                for grp in forming:
+                    if uid in grp:
+                        return grp
+        return None
+
+    def get_queue_progress(
+        self, session_id: str, uid: str, condition: Optional[str] = None
+    ) -> Optional[Dict]:
+        """Humans in the same forming group as uid (AI bots are not counted)."""
+        session = self.sessions.get(session_id)
+        slot = self._forming_slot_for_uid(session_id, uid, condition)
+        if not session or slot is None:
+            return None
+        min_h, max_h = resolve_human_group_bounds(session)
+        ai_count = len(session.bots) if getattr(session, "bot_enabled", True) and session.bots else 0
+        return {
+            "humans_matched": len(slot),
+            "min_humans_per_group": min_h,
+            "max_humans_per_group": max_h,
+            "ai_teammates_ready": ai_count,
+        }
 
     def _remove_uid_from_forming(self, forming: List[List[str]], uid: str) -> None:
-        for grp in forming[:]:
+        for grp in list(forming):
             if uid in grp:
                 grp.remove(uid)
             if not grp:
