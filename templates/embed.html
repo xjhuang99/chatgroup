@@ -358,8 +358,8 @@
         const roster = data.teammate_display_names || [];
         onboardingSpinner.style.display = 'block';
         onboardingTitle.textContent = `Matched ${matched}/${need} participant${need === 1 ? '' : 's'} — please wait.`;
-        onboardingSub.textContent = 'Waiting for more participants to join your group.';
-        onboardingSub.style.display = 'block';
+        onboardingSub.textContent = '';
+        onboardingSub.style.display = 'none';
         onboardingSubEn.style.display = 'none';
         wsStatus.textContent = `Matching… ${matched}/${need}`;
         if (roster.length) {
