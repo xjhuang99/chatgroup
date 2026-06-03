@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>… — xjhuang.com</title>
+    <link rel="canonical" href="https://xjhuang.com/home">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Inter, sans-serif;
+            min-height: 100vh;
+            color: #e8eaf0;
+            overflow-x: hidden;
+        }
+        body.lang-zh-Hans { font-family: "PingFang SC", sans-serif; }
+        body.lang-zh-Hant { font-family: "PingFang TC", sans-serif; }
+
+        .cosmos {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(to bottom, #020208 0%, #050818 40%, #0a1028 70%, #030510 100%);
+        }
+        #starCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .milky-way {
+            position: absolute;
+            inset: -20% -10%;
+            background: linear-gradient(
+                118deg,
+                transparent 28%,
+                rgba(120, 140, 200, 0.06) 42%,
+                rgba(180, 190, 230, 0.12) 50%,
+                rgba(120, 140, 200, 0.06) 58%,
+                transparent 72%
+            );
+            transform: rotate(-12deg);
+            pointer-events: none;
+        }
+        .sky-glow {
+            position: absolute;
+            width: 70vmin;
+            height: 70vmin;
+            top: -15vmin;
+            left: 50%;
+            transform: translateX(-50%);
+            background: radial-gradient(circle, rgba(60, 80, 160, 0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .cosmos .vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.65) 100%);
+            pointer-events: none;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px 40px;
+        }
+
+        .quote-block {
+            max-width: 640px;
+            text-align: center;
+            margin-bottom: 36px;
+            animation: fadeUp 1.2s ease-out both;
+        }
+        .quote-block blockquote {
+            font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+            font-size: clamp(1.65rem, 4.5vw, 2.35rem);
+            font-weight: 400;
+            line-height: 1.45;
+            color: #f4f0e8;
+            font-style: italic;
+            letter-spacing: 0.02em;
+            text-shadow: 0 2px 24px rgba(0,0,0,0.4);
+        }
+        body.lang-zh-Hans .quote-block blockquote,
+        body.lang-zh-Hant .quote-block blockquote {
+            font-family: inherit;
+            font-style: normal;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+        }
+        .quote-block cite {
+            display: block;
+            margin-top: 18px;
+            font-size: 0.9375rem;
+            font-style: normal;
+            font-weight: 600;
+            color: rgba(200, 190, 220, 0.85);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .card {
+            max-width: 460px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 18px;
+            padding: 28px 28px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            animation: fadeUp 1.2s ease-out 0.25s both;
+        }
+        h1 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #f5c896;
+        }
+        .joke {
+            font-size: 0.975rem;
+            line-height: 1.65;
+            color: rgba(232, 234, 240, 0.88);
+            margin-bottom: 20px;
+            min-height: 3.2em;
+        }
+        .joke strong { color: #fff; font-weight: 600; }
+        .actions { margin-bottom: 12px; }
+        .btn {
+            display: inline-block;
+            padding: 11px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #e67e22 0%, #c45c12 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 0.9375rem;
+            text-decoration: none;
+        }
+        .btn:hover { opacity: 0.92; }
+        .btn-ghost {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.22);
+            color: rgba(232, 234, 240, 0.9);
+            font-weight: 600;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+        .btn-ghost:hover { border-color: #f5c896; color: #f5c896; }
+        .hint {
+            font-size: 0.8125rem;
+            color: rgba(200, 205, 220, 0.65);
+        }
+        .hint a { color: #f5c896; text-decoration: none; font-weight: 600; }
+        .hint a:hover { text-decoration: underline; }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 20px;
+        }
+        .lang-switch button {
+            padding: 4px 10px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.06);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(232, 234, 240, 0.8);
+            font-family: inherit;
+        }
+        .lang-switch button.active {
+            background: rgba(230, 126, 34, 0.25);
+            border-color: rgba(230, 126, 34, 0.6);
+            color: #f5c896;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="lang-en" id="rootBody">
+<div class="cosmos" aria-hidden="true">
+    <canvas id="starCanvas"></canvas>
+    <div class="milky-way"></div>
+    <div class="sky-glow"></div>
+    <div class="vignette"></div>
+</div>
+<div class="page">
+    <header class="quote-block">
+        <blockquote data-i18n="quote">Wonder is the beginning of wisdom.</blockquote>
+        <cite data-i18n="quoteAuthor">— Socrates</cite>
+    </header>
+
+    <div class="card">
+        <h1 data-i18n="title">Wrong floor?</h1>
+        <p class="joke" id="joke" data-i18n="joke">You opened <strong>xjhuang.com</strong> — the address — but not <strong>/home</strong>, where the profile actually lives.</p>
+        <div class="actions">
+            <a class="btn" href="/home" data-i18n="cta">Take me to /home →</a>
+            <button type="button" class="btn-ghost" id="anotherJoke" data-i18n="again">Another joke</button>
+        </div>
+        <p class="hint" data-i18n="hint">Bookmark <a href="/home">xjhuang.com/home</a> — examine that one instead.</p>
+        <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" data-lang="zh-Hans">简体</button>
+            <button type="button" data-lang="en" class="active">EN</button>
+            <button type="button" data-lang="zh-Hant">繁體</button>
+        </div>
+    </div>
+</div>
+<script>
+const ROOT_I18N = {
+    en: {
+        quote: 'Wonder is the beginning of wisdom.',
+        quoteAuthor: '— Socrates',
+        title: 'Wrong floor?',
+        joke: 'You opened <strong>xjhuang.com</strong> — the address — but not <strong>/home</strong>, where the profile actually lives.',
+        cta: 'Take me to /home →',
+        again: 'Another joke',
+        hint: 'Bookmark <a href="/home">xjhuang.com/home</a> — start wondering there.',
+        extras: [
+            'This page is 100% domain, 0% CV. The résumé is at /home.',
+            'Plato\'s cave had shadows. This page is mostly URL bar.',
+            'You found the lobby. The examined life is documented at /home.',
+            'HTTP 200: Success, but spiritually you wanted /home.',
+        ],
+    },
+    'zh-Hans': {
+        quote: '惊奇是智慧的开始。',
+        quoteAuthor: '—— 苏格拉底',
+        title: '走错楼层了？',
+        joke: '你打开的是 <strong>xjhuang.com</strong>（门牌号），不是 <strong>/home</strong>（客厅）。',
+        cta: '去 /home →',
+        again: '再来一个',
+        hint: '建议收藏 <a href="/home">xjhuang.com/home</a>——去那里继续好奇。',
+        extras: [
+            '此页：域名本体，零简历含量。简历在 /home。',
+            '柏拉图洞穴里只有影子，这里只有域名。',
+            '欢迎来到大堂。馨洁的「人生审视」在 /home。',
+            'HTTP 200，但灵魂上你想去的是 /home。',
+        ],
+    },
+    'zh-Hant': {
+        quote: '驚奇是智慧的開始。',
+        quoteAuthor: '—— 蘇格拉底',
+        title: '走錯樓層了？',
+        joke: '你打開的是 <strong>xjhuang.com</strong>（門牌號），不是 <strong>/home</strong>（客廳）。',
+        cta: '去 /home →',
+        again: '再來一個',
+        hint: '建議收藏 <a href="/home">xjhuang.com/home</a>——去那裡繼續好奇。',
+        extras: [
+            '此頁：域名本體，零履歷含量。履歷在 /home。',
+            '柏拉圖洞穴裡只有影子，這裡只有域名。',
+            '歡迎來到大堂。馨潔的「人生審視」在 /home。',
+            'HTTP 200，但靈魂上你想去的是 /home。',
+        ],
+    },
+};
+
+let lang = 'en';
+let jokeIdx = 0;
+
+function applyLang(code) {
+    lang = code;
+    const pack = ROOT_I18N[code] || ROOT_I18N.en;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (pack[key] == null) return;
+        if (key === 'hint' || key === 'joke') el.innerHTML = pack[key];
+        else el.textContent = pack[key];
+    });
+    document.body.classList.remove('lang-en', 'lang-zh-Hans', 'lang-zh-Hant');
+    document.body.classList.add('lang-' + code);
+    document.documentElement.lang = code === 'zh-Hans' ? 'zh-CN' : code === 'zh-Hant' ? 'zh-HK' : 'en';
+    document.querySelectorAll('.lang-switch button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === code);
+    });
+    jokeIdx = 0;
+    try { localStorage.setItem('homeLang', code); } catch (_) {}
+}
+
+document.getElementById('anotherJoke').addEventListener('click', () => {
+    const extras = (ROOT_I18N[lang] || ROOT_I18N.en).extras;
+    jokeIdx = (jokeIdx + 1) % extras.length;
+    document.getElementById('joke').textContent = extras[jokeIdx];
+});
+
+document.querySelectorAll('.lang-switch button').forEach(btn => {
+    btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+
+(function init() {
+    try {
+        const saved = localStorage.getItem('homeLang');
+        if (saved && ROOT_I18N[saved]) applyLang(saved);
+    } catch (_) {}
+})();
+
+(function initStarfield() {
+    const canvas = document.getElementById('starCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let w = 0;
+    let h = 0;
+
+    function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        stars = [];
+        const count = Math.floor((w * h) / 2800);
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 1.4 + 0.3,
+                base: Math.random() * 0.5 + 0.35,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: Math.random() * 0.015 + 0.004,
+            });
+        }
+    }
+
+    function draw(t) {
+        ctx.clearRect(0, 0, w, h);
+        for (const s of stars) {
+            const flicker = 0.55 + 0.45 * Math.sin(t * s.speed + s.twinkle);
+            const alpha = s.base * flicker;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.fill();
+            if (s.r > 1.1 && alpha > 0.7) {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r * 2.2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(200, 215, 255, ${alpha * 0.15})`;
+                ctx.fill();
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

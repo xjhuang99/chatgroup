@@ -54,7 +54,7 @@ async def home_page(request: Request):
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     if _is_personal_site(request):
-        return RedirectResponse(url="/home", status_code=302)
+        return templates.TemplateResponse("xjhuang_root.html", {"request": request})
     if not check_auth(request):
         return _require_auth_or_login(request, "/")
     return templates.TemplateResponse("dashboard.html", {"request": request})
