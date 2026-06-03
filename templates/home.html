@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home — Xinjie (Monica) Huang</title>
     <link rel="canonical" href="https://xjhuang.com/home">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
     <link rel="stylesheet" href="/static/theme.css">
     <style>
         #homeBody {
@@ -13,13 +14,39 @@
             transition: font-family 0.15s;
         }
         #homeBody.lang-en {
-            font-family: "Inter", "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: Inter, sans-serif;
         }
         #homeBody.lang-zh-Hans {
-            font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
+            font-family: "PingFang SC", sans-serif;
         }
         #homeBody.lang-zh-Hant {
-            font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
+            font-family: "PingFang TC", sans-serif;
+        }
+        #homeBody.lang-zh-Hans,
+        #homeBody.lang-zh-Hant {
+            line-height: 1.75;
+            letter-spacing: 0.02em;
+        }
+        #homeBody.lang-zh-Hans .hero h1,
+        #homeBody.lang-zh-Hant .hero h1 {
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        #homeBody.lang-zh-Hans .app-guide h2,
+        #homeBody.lang-zh-Hant .app-guide h2,
+        #homeBody.lang-zh-Hans .section h2,
+        #homeBody.lang-zh-Hant .section h2 {
+            text-transform: none;
+            letter-spacing: 0.03em;
+            font-weight: 700;
+        }
+        #homeBody.lang-zh-Hans .app-card .app-title,
+        #homeBody.lang-zh-Hant .app-card .app-title,
+        #homeBody.lang-zh-Hans .entry-title,
+        #homeBody.lang-zh-Hant .entry-title,
+        #homeBody.lang-zh-Hans .research-title,
+        #homeBody.lang-zh-Hant .research-title {
+            font-weight: 700;
         }
         .page {
             max-width: 920px;
@@ -314,7 +341,7 @@
                 <span class="entry-meta" data-i18n="edu.ic.date">Oct 2020 — Oct 2021</span>
             </div>
             <div class="entry-sub" data-i18n="edu.ic.degree">MSc Communications and Signal Processing</div>
-            <ul class="bullets"><li data-i18n="edu.ic.b1">Thesis: Doppler radar signal processing (MATLAB + Microwave Studio).</li></ul>
+            <ul class="bullets"><li data-i18n="edu.ic.b1">Thesis: Doppler radar signal processing.</li></ul>
         </div>
         <div class="entry">
             <div class="entry-head">
@@ -322,7 +349,7 @@
                 <span class="entry-meta" data-i18n="edu.leeds.date">Sep 2016 — Jul 2020</span>
             </div>
             <div class="entry-sub" data-i18n="edu.leeds.degree">BEng EEE; dual degree with Southwest Jiaotong University</div>
-            <ul class="bullets"><li data-i18n="edu.leeds.b1">Research: machine translation evolution (rule-based to Transformer).</li></ul>
+            <ul class="bullets"><li data-i18n="edu.leeds.b1">Research: machine translation evolution.</li></ul>
         </div>
     </section>
 
@@ -459,10 +486,10 @@ const HOME_I18N = {
         'edu.hkust.degree': 'Auditing · Organizational Behavior (OB), Behavioral Science, and Negotiation',
         'edu.ic.org': 'Imperial College London', 'edu.ic.date': 'Oct 2020 — Oct 2021',
         'edu.ic.degree': 'London, UK · MSc Communications and Signal Processing',
-        'edu.ic.b1': 'Thesis: Doppler radar signal processing (MATLAB + Microwave Studio).',
+        'edu.ic.b1': 'Thesis: Doppler radar signal processing.',
         'edu.leeds.org': 'University of Leeds', 'edu.leeds.date': 'Sep 2016 — Jul 2020',
         'edu.leeds.degree': 'Leeds, UK · BEng EEE; dual degree with Southwest Jiaotong University',
-        'edu.leeds.b1': 'Research: machine translation evolution (rule-based to Transformer).',
+        'edu.leeds.b1': 'Research: machine translation evolution.',
         'pres.p1': 'HKUST CEI Workshop: Reimagining Education (Nov 2025).',
         'pres.p2': 'HKUST CEI Workshop: AI Sandbox for Educators (Apr 2025).',
         'pres.p3': 'Attendee: 7th Asian Management Research Consortium (May 2025).',
@@ -477,7 +504,7 @@ const HOME_I18N = {
         'hero.name': '黄馨洁',
         'hero.nameAlt': 'Xinjie (Monica) Huang',
         'hero.photoAlt': '黄馨洁 · Xinjie (Monica) Huang',
-        'hero.lab': 'ACTR Lab · 香港科技大学',
+        'hero.lab': 'ACTR 实验室 · 香港科技大学',
         'hero.location': '香港',
         'apps.title': '我开发的平台',
         'apps.chatbot.title': 'Chatbot App',
@@ -496,7 +523,7 @@ const HOME_I18N = {
         'exp.hkust.b2': '协助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 与 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 资助申请。',
         'exp.hkust.b3': '开展机构（高校等）AI 应用的质性与定量研究。',
         'exp.hkust.b4': '参与港科大图书馆 GenAI 文献工具项目。',
-        'exp.hkust.b5': '搭建并维护 ACTR Lab 平台（Chatbot、群组聊天、囚徒困境游戏）。',
+        'exp.hkust.b5': '搭建并维护 ACTR 实验室平台（Chatbot、群组聊天、囚徒困境游戏）。',
         'exp.cmcc.org': '中国移动国际有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
         'exp.cmcc.role': '香港与深圳 · 技术顾问',
         'exp.cmcc.b1': '数字化转型：AI、云与 ERP。',
@@ -516,10 +543,10 @@ const HOME_I18N = {
         'edu.hkust.degree': '旁听 · 组织行为学（OB）、行为科学与谈判',
         'edu.ic.org': '帝国理工学院', 'edu.ic.date': '2020年10月 — 2021年10月',
         'edu.ic.degree': '伦敦 · 通信与信号处理硕士',
-        'edu.ic.b1': '论文：多普勒雷达信号处理（MATLAB + Microwave Studio）。',
+        'edu.ic.b1': '论文：多普勒雷达信号处理。',
         'edu.leeds.org': '利兹大学', 'edu.leeds.date': '2016年9月 — 2020年7月',
         'edu.leeds.degree': '电子电气工程学士；西南交通大学双学位',
-        'edu.leeds.b1': '研究：机器翻译演进（规则系统至 Transformer）。',
+        'edu.leeds.b1': '研究：机器翻译演进。',
         'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
         'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
         'pres.p3': '参会：第七届亚洲管理研究联盟 AMRC（2025年5月）。',
@@ -534,7 +561,7 @@ const HOME_I18N = {
         'hero.name': '黃馨潔',
         'hero.nameAlt': 'Xinjie (Monica) Huang',
         'hero.photoAlt': '黃馨潔 · Xinjie (Monica) Huang',
-        'hero.lab': 'ACTR Lab · 香港科技大學',
+        'hero.lab': 'ACTR 實驗室 · 香港科技大學',
         'hero.location': '香港',
         'apps.title': '我開發的平台',
         'apps.chatbot.title': 'Chatbot App',
@@ -553,7 +580,7 @@ const HOME_I18N = {
         'exp.hkust.b2': '協助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 與 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 資助申請。',
         'exp.hkust.b3': '開展機構（高校等）AI 應用的質性與定量研究。',
         'exp.hkust.b4': '參與港科大圖書館 GenAI 文獻工具項目。',
-        'exp.hkust.b5': '建置並維護 ACTR Lab 平台（Chatbot、群組聊天、囚徒困境遊戲）。',
+        'exp.hkust.b5': '建置並維護 ACTR 實驗室平台（Chatbot、群組聊天、囚徒困境遊戲）。',
         'exp.cmcc.org': '中國移動國際有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
         'exp.cmcc.role': '香港與深圳 · 技術顧問',
         'exp.cmcc.b1': '數位轉型：AI、雲與 ERP。',
@@ -573,10 +600,10 @@ const HOME_I18N = {
         'edu.hkust.degree': '旁聽 · 組織行為學（OB）、行為科學與談判',
         'edu.ic.org': '帝國理工學院', 'edu.ic.date': '2020年10月 — 2021年10月',
         'edu.ic.degree': '倫敦 · 通訊與訊號處理碩士',
-        'edu.ic.b1': '論文：都卜勒雷達訊號處理（MATLAB + Microwave Studio）。',
+        'edu.ic.b1': '論文：都卜勒雷達訊號處理。',
         'edu.leeds.org': '利茲大學', 'edu.leeds.date': '2016年9月 — 2020年7月',
         'edu.leeds.degree': '電子電氣工程學士；西南交通大學雙學位',
-        'edu.leeds.b1': '研究：機器翻譯演進（規則系統至 Transformer）。',
+        'edu.leeds.b1': '研究：機器翻譯演進。',
         'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
         'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
         'pres.p3': '參會：第七屆亞洲管理研究聯盟 AMRC（2025年5月）。',
