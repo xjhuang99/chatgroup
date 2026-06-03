@@ -57,7 +57,7 @@ async function loadMe() {
     const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
     const d = await r.json();
     if (!d.authenticated) {
-        location.href = '/account';
+        location.href = '/login?redirect=/account';
         return;
     }
     if (d.type === 'admin') {

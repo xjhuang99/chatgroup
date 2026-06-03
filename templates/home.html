@@ -7,7 +7,11 @@
     <link rel="canonical" href="https://xjhuang.com/home">
     <link rel="stylesheet" href="/static/theme.css">
     <style>
-        body { line-height: 1.65; transition: font-family 0.15s; }
+        body {
+            line-height: 1.65;
+            font-size: 1rem;
+            transition: font-family 0.15s;
+        }
         body.lang-en {
             font-family: "Inter", "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
@@ -70,25 +74,25 @@
         }
         .hero-text { flex: 1; min-width: 240px; }
         .hero h1 {
-            font-size: 1.85rem;
+            font-size: 1.375rem;
             font-weight: 800;
             color: var(--gray-900);
             margin-bottom: 4px;
         }
         .hero .name-alt {
-            font-size: var(--fs-sm);
+            font-size: 1rem;
             color: var(--gray-500);
             font-weight: 600;
             margin-bottom: 10px;
         }
         .hero .lab-line {
-            font-size: var(--fs-sm);
+            font-size: 1rem;
             color: var(--orange-dark);
             font-weight: 700;
             margin-bottom: 8px;
         }
         .hero .tagline {
-            font-size: var(--fs-md);
+            font-size: 1rem;
             color: var(--gray-700);
             margin-bottom: 12px;
         }
@@ -96,7 +100,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px 16px;
-            font-size: var(--fs-sm);
+            font-size: 1rem;
             color: var(--gray-700);
         }
         .contact a { color: var(--orange-dark); font-weight: 600; text-decoration: none; }
@@ -110,15 +114,13 @@
             box-shadow: var(--shadow-sm);
         }
         .app-guide h2 {
-            font-size: var(--fs-md);
+            font-size: 1.0625rem;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
             color: var(--orange-dark);
             margin-bottom: 6px;
         }
         .app-guide .guide-lead {
-            font-size: var(--fs-sm);
+            font-size: 1rem;
             color: var(--gray-700);
             margin-bottom: 20px;
         }
@@ -144,29 +146,29 @@
             transform: translateY(-3px);
             box-shadow: 0 8px 24px rgba(230, 126, 34, 0.18);
         }
-        .app-card .app-icon { font-size: 2rem; margin-bottom: 10px; }
+        .app-card .app-icon { font-size: 1.5rem; margin-bottom: 10px; }
         .app-card .app-title {
-            font-size: 1.1rem;
+            font-size: 1.0625rem;
             font-weight: 800;
             color: var(--gray-900);
             margin-bottom: 8px;
         }
         .app-card .app-desc {
             flex: 1;
-            font-size: var(--fs-sm);
+            font-size: 1rem;
             color: var(--gray-700);
             line-height: 1.5;
             margin-bottom: 14px;
         }
         .app-card .app-url {
-            font-size: 0.75rem;
+            font-size: 0.9375rem;
             color: var(--gray-500);
             word-break: break-all;
             margin-bottom: 8px;
         }
         .app-card .app-cta {
-            font-size: var(--fs-sm);
-            font-weight: 800;
+            font-size: 1rem;
+            font-weight: 700;
             color: var(--orange-dark);
         }
         a.app-card:hover .app-cta { text-decoration: underline; }
@@ -179,16 +181,14 @@
             box-shadow: var(--shadow-sm);
         }
         .section h2 {
-            font-size: var(--fs-md);
+            font-size: 1.0625rem;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
             color: var(--orange-dark);
             margin-bottom: 14px;
             padding-bottom: 8px;
             border-bottom: 2px solid var(--gray-100);
         }
-        .toc-jump { font-size: var(--fs-sm); margin-bottom: 16px; }
+        .toc-jump { font-size: 1rem; margin-bottom: 16px; }
         .toc-jump a {
             color: var(--orange-dark);
             font-weight: 600;
@@ -203,14 +203,14 @@
             gap: 4px 12px;
             margin-bottom: 4px;
         }
-        .entry-title { font-weight: 800; color: var(--gray-900); }
-        .entry-meta { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
-        .entry-sub { font-size: var(--fs-sm); color: var(--gray-700); margin-bottom: 6px; }
-        ul.bullets { padding-left: 1.25rem; margin: 0; font-size: var(--fs-md); color: #444; }
+        .entry-title { font-weight: 800; font-size: 1rem; color: var(--gray-900); }
+        .entry-meta { font-size: 0.9375rem; color: var(--gray-500); font-style: italic; }
+        .entry-sub { font-size: 1rem; color: var(--gray-700); margin-bottom: 6px; }
+        ul.bullets { padding-left: 1.25rem; margin: 0; font-size: 1rem; color: #444; }
         ul.bullets li { margin-bottom: 6px; }
         ul.bullets a { color: var(--orange-dark); font-weight: 600; }
-        .research-title { font-weight: 800; }
-        .research-status { font-size: var(--fs-sm); color: var(--gray-500); font-style: italic; }
+        .research-title { font-weight: 800; font-size: 1rem; }
+        .research-status { font-size: 0.9375rem; color: var(--gray-500); font-style: italic; }
         @media (max-width: 720px) {
             .page { margin-top: 16px; }
             .hero { justify-content: center; text-align: center; }

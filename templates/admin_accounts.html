@@ -37,9 +37,9 @@
 
 <div class="wrap">
     <div class="card">
-        <h1>Researcher accounts</h1>
-        <p class="sub">Super-admin view: registration, API spend, and per-person budget (default $<span id="defaultCap">—</span>).</p>
-        <div class="note">Each registered email has its own API budget. Sessions they create count toward that total. The ACTR2026 super-admin login is separate and is not listed here.</div>
+        <h1>Researcher accounts <span style="font-size:0.72em;font-weight:700;color:var(--gray-500);">(super-admin only)</span></h1>
+        <p class="sub">Manage registered researchers: API spend and per-person budget (default $<span id="defaultCap">—</span>). Regular researchers do not see this page — they use Dashboard after signing in at <a href="/login">/login</a>.</p>
+        <div class="note">Each researcher registers at <a href="/register">/register</a> with their email and gets their own API budget. Sessions they create count toward that total. The lab super-admin login (e.g. ACTR2026) is separate and is not listed here.</div>
         <div id="tableWrap"><p class="empty">Loading…</p></div>
     </div>
 </div>
@@ -50,7 +50,7 @@ async function loadAccounts() {
     try {
         const res = await fetch('/api/admin/accounts', { credentials: 'same-origin' });
         if (res.status === 401) {
-            location.href = '/admin/accounts';
+            location.href = '/login?redirect=/admin/accounts';
             return;
         }
         const data = await res.json();

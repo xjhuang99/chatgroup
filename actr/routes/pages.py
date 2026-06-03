@@ -30,15 +30,11 @@ def _login_redirect(next_path: str) -> RedirectResponse:
 
 
 def _require_auth_or_login(request: Request, next_path: str):
-    if _is_group_site(request):
-        return templates.TemplateResponse("login.html", {"request": request})
     return _login_redirect(next_path)
 
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    if _is_group_site(request):
-        return RedirectResponse(url="/", status_code=302)
     if check_auth(request):
         target = (request.query_params.get("redirect") or "/").strip()
         if not target.startswith("/"):

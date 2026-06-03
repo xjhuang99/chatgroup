@@ -3,59 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — ACTR</title>
+    <title>Sign in — ACTR</title>
     <link rel="stylesheet" href="/static/theme.css">
     <style>
-        :root {
-            --gradient: var(--primary-gradient);
-        }
+        :root { --gradient: var(--primary-gradient); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 1rem;
             background: var(--gradient);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #333;
+            padding: 24px 16px;
         }
         .login-card {
             background: white;
             border-radius: 16px;
-            padding: 40px 48px;
+            padding: 36px 40px 32px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
         }
         .logo {
             font-weight: 800;
-            font-size: 2rem;
+            font-size: 1.75rem;
             color: var(--orange);
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .subtitle {
             text-align: center;
-            color: #888;
-            font-size: 0.9rem;
-            margin-bottom: 32px;
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 22px;
+            line-height: 1.5;
         }
-        .form-group {
-            margin-bottom: 20px;
+        .help-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.9375rem;
+            color: #475569;
+            line-height: 1.55;
+            margin-bottom: 22px;
         }
+        .help-box strong { color: #334155; }
+        .form-group { margin-bottom: 16px; }
         label {
             display: block;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.9375rem;
             margin-bottom: 6px;
             color: #555;
         }
         input[type=text], input[type=password] {
             width: 100%;
-            padding: 12px 16px;
+            padding: 12px 14px;
             border: 2px solid #e8e8e8;
             border-radius: 8px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-family: inherit;
             transition: border-color 0.15s;
         }
@@ -65,7 +75,7 @@
         }
         .btn-login {
             width: 100%;
-            padding: 14px;
+            padding: 13px;
             background: var(--gradient);
             color: white;
             border: none;
@@ -75,16 +85,55 @@
             cursor: pointer;
             transition: opacity 0.15s;
         }
-        .btn-login:hover {
-            opacity: 0.9;
+        .btn-login:hover { opacity: 0.9; }
+        .btn-register {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 13px;
+            border: 2px solid var(--orange);
+            border-radius: 8px;
+            background: white;
+            color: var(--orange-dark);
+            font-weight: 700;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.15s;
         }
+        .btn-register:hover { background: var(--orange-pale); }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0 14px;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .footer-links {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.9375rem;
+        }
+        .footer-links a {
+            color: var(--gray-700);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .footer-links a:hover { text-decoration: underline; }
         .error-msg {
             background: #fee;
             border: 1px solid #fcc;
             color: #c33;
             padding: 10px 14px;
             border-radius: 8px;
-            font-size: 0.85rem;
+            font-size: 0.9375rem;
             margin-bottom: 16px;
             display: none;
         }
@@ -93,7 +142,13 @@
 <body>
     <div class="login-card">
         <div class="logo">ACTR</div>
-        <div class="subtitle">Sign in (researcher account or super-admin)</div>
+        <div class="subtitle">AI + Human Group Chat · researcher platform</div>
+
+        <div class="help-box">
+            <strong>New here?</strong> Create a researcher account (one per email, default $200 API budget).<br>
+            <strong>Already registered?</strong> Sign in below.<br>
+            <strong>Lab super-admin?</strong> Use the admin username/password — not listed under Researchers.
+        </div>
 
         <div id="error-msg" class="error-msg"></div>
 
@@ -108,10 +163,12 @@
             </div>
             <button type="submit" class="btn-login">Sign in</button>
         </form>
-        <p style="text-align:center;margin-top:18px;font-size:0.88rem;">
-            <a href="https://xjhuang.com/home" style="color:var(--gray-700);font-weight:600;">About Monica Huang</a>
-            ·
-            <a href="/register" style="color:var(--orange-dark);font-weight:600;">Create researcher account</a>
+
+        <div class="divider">or</div>
+        <a href="/register" class="btn-register">Create researcher account</a>
+
+        <p class="footer-links">
+            <a href="https://xjhuang.com/home">About Monica Huang</a>
         </p>
     </div>
 
@@ -132,11 +189,7 @@
                 if (res.ok) {
                     sessionStorage.setItem('actr_admin', '1');
                     const params = new URLSearchParams(window.location.search);
-                    const fromQuery = params.get('redirect');
-                    const fromPath = window.location.pathname !== '/login'
-                        ? window.location.pathname + window.location.search
-                        : '/';
-                    const redirect = fromQuery || fromPath;
+                    const redirect = params.get('redirect') || '/';
                     window.location.href = redirect.startsWith('/') ? redirect : '/';
                     return;
                 }

@@ -426,7 +426,7 @@
     <nav class="nav-links">
         <a href="/" class="active">Dashboard</a>
         <a href="/admin">Admin</a>
-        <a href="/admin/accounts" id="navResearchers" style="display:none;">Researchers</a>
+        <a href="/admin/accounts" id="navResearchers" style="display:none;" title="Super-admin only">Researchers (admin)</a>
         <a href="/account" id="navAccount" style="display:none;">Account</a>
         <a href="/manual">Manual</a>
     </nav>
@@ -909,7 +909,7 @@ async function confirmModifySession() {
         });
         if (res.status === 401) {
             toast('Please sign in again');
-            window.location.href = location.pathname + location.search;
+            window.location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
             return;
         }
         const data = await res.json().catch(() => ({}));

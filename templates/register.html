@@ -27,7 +27,7 @@
 <body>
 <div class="card">
     <div class="logo">ACTR</div>
-    <div class="sub">Researcher account · $200 API budget per email</div>
+    <div class="sub">New researcher · one account per email · $200 API budget (default)</div>
     <div id="err" class="error"></div>
     <div id="ok" class="success"></div>
     <form id="regForm">
@@ -48,9 +48,9 @@
     <div id="credBox" style="display:none;">
         <p><strong>Save these credentials now</strong> (password shown once):</p>
         <div class="cred" id="credText"></div>
-        <p style="margin-top:14px;"><a href="/">Go to Dashboard →</a></p>
+        <p style="margin-top:14px;"><a href="/login">Sign in →</a></p>
     </div>
-    <div class="links"><a href="/">Already have an account? Sign in</a></div>
+    <div class="links"><a href="/login">Already have an account? Sign in</a></div>
 </div>
 <script>
 document.getElementById('regForm').onsubmit = async (e) => {
