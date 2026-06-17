@@ -51,6 +51,12 @@ async def home_page(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
 
 
+@router.get("/poster/hera-evaluative-judgement-genai", response_class=HTMLResponse)
+async def hera_poster_page(request: Request):
+    """Public HERA 2026 conference poster (evaluative judgement & GenAI)."""
+    return templates.TemplateResponse("poster_hera.html", {"request": request})
+
+
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     if _is_personal_site(request):

@@ -241,8 +241,25 @@
         .entry-sub { font-size: 1rem; color: var(--gray-700); margin-bottom: 6px; }
         ul.bullets { padding-left: 1.25rem; margin: 0; font-size: 1rem; color: #444; }
         ul.bullets li { margin-bottom: 6px; }
-        ul.bullets a { color: var(--orange-dark); font-weight: 600; }
+        ul.bullets a { color: var(--orange-dark); font-weight: 600; text-decoration: none; }
+        ul.bullets a:hover { text-decoration: underline; }
         .research-title { font-weight: 800; font-size: 1rem; }
+        .research-head { margin: 0 0 8px; line-height: 1.5; }
+        .research-head .research-title-link {
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--gray-900);
+            text-decoration: none;
+            box-shadow: inset 0 -2px 0 rgba(234, 88, 12, 0.28);
+        }
+        .research-head .research-title-link:hover { color: var(--orange-dark); }
+        .research-head .research-status {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.9375rem;
+            color: var(--gray-500);
+            font-style: italic;
+        }
         .research-status { font-size: 0.9375rem; color: var(--gray-500); font-style: italic; }
         #interests p { font-size: 1rem; color: var(--gray-700); }
         @media (max-width: 900px) {
@@ -281,7 +298,7 @@
             <div class="contact">
                 <a href="mailto:xinjiehuang@ust.hk">xinjiehuang@ust.hk</a>
                 <span>+852 5142 7267</span>
-                <span data-i18n="hero.location">Hong Kong</span>
+                <span data-i18n="hero.location">Hong Kong, PRC</span>
             </div>
         </div>
     </section>
@@ -348,8 +365,11 @@
                 <span class="entry-title" data-i18n="edu.leeds.org">University of Leeds</span>
                 <span class="entry-meta" data-i18n="edu.leeds.date">Sep 2016 — Jul 2020</span>
             </div>
-            <div class="entry-sub" data-i18n="edu.leeds.degree">BEng EEE; dual degree with Southwest Jiaotong University</div>
-            <ul class="bullets"><li data-i18n="edu.leeds.b1">Research: machine translation evolution.</li></ul>
+            <div class="entry-sub" data-i18n="edu.leeds.degree">BEng Electrical and Electronic Engineering (EEE)</div>
+            <ul class="bullets">
+                <li data-i18n="edu.leeds.b1">Research: machine translation evaluation — from statistical models to "Attention Is All You Need".</li>
+                <li data-i18n="edu.leeds.b2">Dual degree with Southwest Jiaotong University.</li>
+            </ul>
         </div>
     </section>
 
@@ -362,11 +382,10 @@
             </div>
             <div class="entry-sub" data-i18n="exp.hkust.role">Hong Kong · Research Assistant</div>
             <ul class="bullets">
-                <li data-i18n="exp.hkust.b1">Supported research through literature reviews, Stata/R quantitative analysis, qualitative methods, and scale development.</li>
-                <li data-i18n-html="exp.hkust.b2">Helped prepare applications for <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> and <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">large TLIP</a> funding initiatives.</li>
-                <li data-i18n="exp.hkust.b3">Conduct qualitative and quantitative research on AI use in institutions.</li>
-                <li data-i18n="exp.hkust.b4">Assisted a literature-review tool featured in HKUST Library GenAI programming.</li>
-                <li data-i18n="exp.hkust.b5">Built and maintained ACTR Lab platforms (Chatbot App, group chat, PD game).</li>
+                <li data-i18n="exp.hkust.b1">Conduct qualitative and quantitative research on AI use in institutions — literature reviews, Stata/R analysis, qualitative methods, and scale development.</li>
+                <li data-i18n-html="exp.hkust.b2">Secured HK$1M+ in <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">Teaching and Learning Innovation Projects (TLIP)</a> and <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">large TLIP</a> funding.</li>
+                <li data-i18n-html="exp.hkust.b3">Assisted a literature-review tool featured in <a href="https://library.hkust.edu.hk/news-events/news/mastering-research-genai-age" rel="noopener" target="_blank">HKUST Library GenAI programming</a>.</li>
+                <li data-i18n="exp.hkust.b4">Built and maintained ACTR Lab platforms (Chatbot App, group chat, PD game).</li>
             </ul>
         </div>
         <div class="entry">
@@ -376,8 +395,8 @@
             </div>
             <div class="entry-sub" data-i18n="exp.cmcc.role">Hong Kong &amp; Shenzhen · Senior Technical Consultant</div>
             <ul class="bullets">
-                <li data-i18n="exp.cmcc.b1">Digital transformation: AI, cloud, and ERP digitalization.</li>
-                <li data-i18n="exp.cmcc.b2">Coordinated 80+ enterprise infrastructure projects; internal trainer on digital management.</li>
+                <li data-i18n="exp.cmcc.b1">Coordinated 10+ enterprise infrastructure projects.</li>
+                <li data-i18n="exp.cmcc.b2">Internal trainer on digital management; digital transformation across AI, cloud, and ERP.</li>
             </ul>
         </div>
     </section>
@@ -385,10 +404,20 @@
     <section class="section" id="research">
         <h2 data-i18n="sec.research">Selected Research Papers &amp; Projects</h2>
         <div class="entry">
+            <p class="research-head">
+                <a href="/poster/hera-evaluative-judgement-genai" class="research-title-link" data-i18n="res.hera.title" rel="noopener" target="_blank">"You Never Know If It's Correct:" An Exploration of Students' Understandings on Evaluative Judgement in the Era of GenAI</a>
+                <span class="research-status" data-i18n="res.hera.status">HERA Annual Conference 2026 · conference poster</span>
+            </p>
+            <ul class="bullets">
+                <li data-i18n="res.hera.b1">Kubert Tianhang Wang (first author); Xinjie (Monica) Huang (second author).</li>
+                <li data-i18n="res.hera.b2">Exploratory qualitative study (critical incident technique; N = 10) on students' evaluative judgement with GenAI.</li>
+            </ul>
+        </div>
+        <div class="entry">
             <p><span class="research-title" data-i18n="res.trust.title">AI Use and Trust</span> — <span class="research-status" data-i18n="res.trust.status">Submitted to OBHDP — under review</span></p>
             <ul class="bullets">
                 <li data-i18n="res.trust.b1">Eight large-scale studies (N = 4,994) on how AI use shapes trust.</li>
-                <li data-i18n="res.trust.b2">Literature review, Stata/R analyses, scale development.</li>
+                <li data-i18n="res.trust.b2">Literature review and Stata/R analyses.</li>
             </ul>
         </div>
         <div class="entry">
@@ -399,13 +428,13 @@
             </ul>
         </div>
         <div class="entry">
-            <p><span class="research-title" data-i18n="res.mapper.title">AI-Augmented Group Dynamics Mapper</span> — <span class="research-status" data-i18n="res.mapper.label">Working project</span></p>
+            <p><span class="research-title" data-i18n="res.mapper.title">AI-Augmented Group Dynamics Mapper</span> — <span class="research-status" data-i18n="res.mapper.label">Working paper</span></p>
             <ul class="bullets">
-                <li data-i18n="res.mapper.b1">Transformer-based pipeline for multi-party chats and 3D “conversation terrain” visualizations.</li>
+                <li data-i18n="res.mapper.b1">Transformer-based pipeline for multi-party chats and 3D "conversation terrain" visualizations.</li>
             </ul>
         </div>
         <div class="entry">
-            <p><span class="research-title" data-i18n="res.esic.title">ESIC Scale</span> — <span class="research-status" data-i18n="res.esic.label">Working project</span></p>
+            <p><span class="research-title" data-i18n="res.esic.title">ESIC Scale</span> — <span class="research-status" data-i18n="res.esic.label">Working paper</span></p>
             <ul class="bullets">
                 <li data-i18n="res.esic.b1">Two-factor scale (online comfort &amp; AI companions); EFA/CFA (N &gt; 1,300).</li>
             </ul>
@@ -415,6 +444,7 @@
     <section class="section" id="presentations">
         <h2 data-i18n="sec.presentations">Conference Presentations</h2>
         <ul class="bullets">
+            <li data-i18n="pres.p0">Presenter, HERA Annual Conference (2026) — evaluative judgement in the GenAI era (conference poster).</li>
             <li data-i18n="pres.p1">HKUST CEI Workshop: Reimagining Education (Nov 2025).</li>
             <li data-i18n="pres.p2">HKUST CEI Workshop: AI Sandbox for Educators (Apr 2025).</li>
             <li data-i18n="pres.p3">Attendee: 7th Asian Management Research Consortium (May 2025).</li>
@@ -448,7 +478,7 @@ const HOME_I18N = {
         'hero.nameAlt': '黄馨洁',
         'hero.photoAlt': 'Xinjie (Monica) Huang · 黄馨洁',
         'hero.lab': 'From ACTR Lab · HKUST',
-        'hero.location': 'Hong Kong',
+        'hero.location': 'Hong Kong, PRC',
         'apps.title': 'Platforms I Built',
         'apps.chatbot.title': 'Chatbot App',
         'apps.chatbot.desc': 'AI chatbots; adopted by leading universities.',
@@ -462,25 +492,28 @@ const HOME_I18N = {
         'sec.education': 'Education', 'sec.presentations': 'Conference Presentations', 'sec.skills': 'Skills & Languages', 'sec.honors': 'Honors & Certifications',
         'exp.hkust.org': 'Hong Kong University of Science and Technology', 'exp.hkust.date': 'Apr 2025 — Present',
         'exp.hkust.role': 'Hong Kong · Research Assistant',
-        'exp.hkust.b1': 'Supported research through literature reviews, Stata/R quantitative analysis, qualitative methods, and scale development.',
-        'exp.hkust.b2': 'Helped prepare applications for <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> and <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">large TLIP</a> funding initiatives.',
-        'exp.hkust.b3': 'Conduct qualitative and quantitative research on AI use in institutions.',
-        'exp.hkust.b4': 'Assisted a literature-review tool featured in HKUST Library GenAI programming.',
-        'exp.hkust.b5': 'Built and maintained ACTR Lab platforms (Chatbot App, group chat, PD game).',
+        'exp.hkust.b1': 'Conduct qualitative and quantitative research on AI use in institutions — literature reviews, Stata/R analysis, qualitative methods, and scale development.',
+        'exp.hkust.b2': 'Secured HK$1M+ in <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">Teaching and Learning Innovation Projects (TLIP)</a> and <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">large TLIP</a> funding.',
+        'res.hera.title': '"You Never Know If It\'s Correct:" An Exploration of Students\' Understandings on Evaluative Judgement in the Era of GenAI',
+        'res.hera.status': 'HERA Annual Conference 2026 · conference poster',
+        'res.hera.b1': 'Kubert Tianhang Wang (first author); Xinjie (Monica) Huang (second author).',
+        'res.hera.b2': 'Exploratory qualitative study (critical incident technique; N = 10) on students\' evaluative judgement with GenAI.',
+        'exp.hkust.b3': 'Assisted a literature-review tool featured in <a href="https://library.hkust.edu.hk/news-events/news/mastering-research-genai-age" rel="noopener" target="_blank">HKUST Library GenAI programming</a>.',
+        'exp.hkust.b4': 'Built and maintained ACTR Lab platforms (Chatbot App, group chat, PD game).',
         'exp.cmcc.org': 'China Mobile International Limited', 'exp.cmcc.date': 'Sep 2021 — Dec 2024',
         'exp.cmcc.role': 'Hong Kong & Shenzhen · Senior Technical Consultant',
-        'exp.cmcc.b1': 'Digital transformation: AI, cloud, and ERP digitalization.',
-        'exp.cmcc.b2': 'Coordinated 80+ enterprise infrastructure projects; internal trainer on digital management.',
+        'exp.cmcc.b1': 'Coordinated 10+ enterprise infrastructure projects.',
+        'exp.cmcc.b2': 'Internal trainer on digital management; digital transformation across AI, cloud, and ERP.',
         'interests.text': 'Human–AI collaboration',
         'res.trust.title': 'AI Use and Trust', 'res.trust.status': 'Submitted to OBHDP — under review',
         'res.trust.b1': 'Eight large-scale studies (N = 4,994) on how AI use shapes trust.',
-        'res.trust.b2': 'Literature review, Stata/R analyses, scale development.',
+        'res.trust.b2': 'Literature review and Stata/R analyses.',
         'res.status.title': 'AI and Status', 'res.status.label': 'Working paper',
         'res.status.b1': 'How AI adoption reshapes competence and status perceptions in organizations.',
         'res.status.b2': 'Survey experiments on competence and normative assimilation.',
-        'res.mapper.title': 'AI-Augmented Group Dynamics Mapper', 'res.mapper.label': 'Working project',
-        'res.mapper.b1': 'Transformer-based pipeline for multi-party chats and 3D “conversation terrain” visualizations.',
-        'res.esic.title': 'ESIC Scale (Emotional Support for Interpersonal Connections)', 'res.esic.label': 'Working project',
+        'res.mapper.title': 'AI-Augmented Group Dynamics Mapper', 'res.mapper.label': 'Working paper',
+        'res.mapper.b1': 'Transformer-based pipeline for multi-party chats and 3D "conversation terrain" visualizations.',
+        'res.esic.title': 'ESIC Scale (Emotional Support for Interpersonal Connections)', 'res.esic.label': 'Working paper',
         'res.esic.b1': 'Two-factor scale (online comfort & AI companions); EFA/CFA (N > 1,300).',
         'edu.hkust.org': 'Hong Kong University of Science and Technology', 'edu.hkust.date': '2025 — Present',
         'edu.hkust.degree': 'Auditing · Organizational Behavior (OB), Behavioral Science, and Negotiation',
@@ -488,8 +521,10 @@ const HOME_I18N = {
         'edu.ic.degree': 'London, UK · MSc Communications and Signal Processing',
         'edu.ic.b1': 'Thesis: Doppler radar signal processing.',
         'edu.leeds.org': 'University of Leeds', 'edu.leeds.date': 'Sep 2016 — Jul 2020',
-        'edu.leeds.degree': 'Leeds, UK · BEng EEE; dual degree with Southwest Jiaotong University',
-        'edu.leeds.b1': 'Research: machine translation evolution.',
+        'edu.leeds.degree': 'Leeds, UK · BEng Electrical and Electronic Engineering (EEE)',
+        'edu.leeds.b1': 'Research: machine translation evaluation — from statistical models to "Attention Is All You Need".',
+        'edu.leeds.b2': 'Dual degree with Southwest Jiaotong University.',
+        'pres.p0': 'Presenter, HERA Annual Conference (2026) — evaluative judgement in the GenAI era (conference poster).',
         'pres.p1': 'HKUST CEI Workshop: Reimagining Education (Nov 2025).',
         'pres.p2': 'HKUST CEI Workshop: AI Sandbox for Educators (Apr 2025).',
         'pres.p3': 'Attendee: 7th Asian Management Research Consortium (May 2025).',
@@ -505,7 +540,7 @@ const HOME_I18N = {
         'hero.nameAlt': 'Xinjie (Monica) Huang',
         'hero.photoAlt': '黄馨洁 · Xinjie (Monica) Huang',
         'hero.lab': 'ACTR 实验室 · 香港科技大学',
-        'hero.location': '香港',
+        'hero.location': '中国香港',
         'apps.title': '我开发的平台',
         'apps.chatbot.title': 'Chatbot App',
         'apps.chatbot.desc': '教学与研究聊天机器人；顶尖大学采用。',
@@ -519,25 +554,28 @@ const HOME_I18N = {
         'sec.education': '教育背景', 'sec.presentations': '会议报告', 'sec.skills': '技能与语言', 'sec.honors': '荣誉与证书',
         'exp.hkust.org': '香港科技大学', 'exp.hkust.date': '2025年4月 — 至今',
         'exp.hkust.role': '香港 · 研究助理',
-        'exp.hkust.b1': '文献综述、Stata/R 定量分析、质性方法与量表开发等研究支持。',
-        'exp.hkust.b2': '协助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 与 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 资助申请。',
-        'exp.hkust.b3': '开展机构（高校等）AI 应用的质性与定量研究。',
-        'exp.hkust.b4': '参与港科大图书馆 GenAI 文献工具项目。',
-        'exp.hkust.b5': '搭建并维护 ACTR 实验室平台（Chatbot、群组聊天、囚徒困境游戏）。',
+        'exp.hkust.b1': '开展机构 AI 应用的质性与定量研究，含文献综述、Stata/R 分析、质性方法与量表开发。',
+        'exp.hkust.b2': '协助获批逾 <strong>100 万港元</strong> <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">Teaching and Learning Innovation Projects（TLIP，教学创新项目）</a> 与 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 资助。',
+        'res.hera.title': '「你永远不知道它是否正确：」GenAI 时代学生对评价性判断的理解探索',
+        'res.hera.status': 'HERA 年会 2026 · 会议海报',
+        'res.hera.b1': 'Kubert Tianhang Wang（第一作者）；黄馨洁（第二作者）。',
+        'res.hera.b2': '探索性质性研究（关键事件法；N = 10），探讨学生在 GenAI 学习环境中的评价性判断。',
+        'exp.hkust.b3': '参与港科大图书馆 <a href="https://library.hkust.edu.hk/news-events/news/mastering-research-genai-age" rel="noopener" target="_blank">GenAI 文献工具项目</a>（Mastering Research in the GenAI Age）。',
+        'exp.hkust.b4': '搭建并维护 ACTR 实验室平台（Chatbot、群组聊天、囚徒困境游戏）。',
         'exp.cmcc.org': '中国移动国际有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
         'exp.cmcc.role': '香港与深圳 · 高级技术顾问',
-        'exp.cmcc.b1': '数字化转型：AI、云与 ERP。',
-        'exp.cmcc.b2': '协调 80+ 企业级基础设施项目；内部数字化培训讲师。',
+        'exp.cmcc.b1': '协调 10+ 企业级基础设施项目。',
+        'exp.cmcc.b2': '内部数字化管理培训讲师；推动 AI、云与 ERP 数字化转型。',
         'interests.text': '人机互动',
         'res.trust.title': 'AI 使用与信任', 'res.trust.status': '投稿 OBHDP 审稿中',
         'res.trust.b1': '八项大规模研究（N = 4,994），探讨 AI 使用如何影响信任。',
-        'res.trust.b2': '文献、Stata/R 分析与量表开发。',
+        'res.trust.b2': '文献与 Stata/R 分析。',
         'res.status.title': 'AI 与地位', 'res.status.label': '工作论文',
         'res.status.b1': '个人采用 AI 如何改变组织中的能力与地位感知。',
         'res.status.b2': '调查实验：能力中介与规范同化调节。',
-        'res.mapper.title': 'AI 增强群组动态图谱', 'res.mapper.label': '进行中项目',
+        'res.mapper.title': 'AI 增强群组动态图谱', 'res.mapper.label': '工作论文',
         'res.mapper.b1': '基于 Transformer 的多方对话分析与三维「对话地形」可视化。',
-        'res.esic.title': 'ESIC 量表（人际连接的情感支持）', 'res.esic.label': '进行中项目',
+        'res.esic.title': 'ESIC 量表（人际连接的情感支持）', 'res.esic.label': '工作论文',
         'res.esic.b1': '双因子量表（线上舒适与 AI 陪伴）；EFA/CFA（N > 1,300）。',
         'edu.hkust.org': '香港科技大学', 'edu.hkust.date': '2025年 — 至今',
         'edu.hkust.degree': '旁听 · 组织行为学（OB）、行为科学与谈判',
@@ -545,8 +583,10 @@ const HOME_I18N = {
         'edu.ic.degree': '伦敦 · 通信与信号处理硕士',
         'edu.ic.b1': '论文：多普勒雷达信号处理。',
         'edu.leeds.org': '利兹大学', 'edu.leeds.date': '2016年9月 — 2020年7月',
-        'edu.leeds.degree': '电子电气工程学士；西南交通大学双学位',
-        'edu.leeds.b1': '研究：机器翻译演进。',
+        'edu.leeds.degree': '英国利兹 · 电子电气工程学士（BEng EEE）',
+        'edu.leeds.b1': '研究：机器翻译评价 — 从统计模型到「Attention Is All You Need」。',
+        'edu.leeds.b2': '西南交通大学双学位。',
+        'pres.p0': '报告：HERA 年会（2026）— GenAI 时代学生评价性判断（会议海报）。',
         'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
         'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
         'pres.p3': '参会：第七届亚洲管理研究联盟 AMRC（2025年5月）。',
@@ -562,7 +602,7 @@ const HOME_I18N = {
         'hero.nameAlt': 'Xinjie (Monica) Huang',
         'hero.photoAlt': '黃馨潔 · Xinjie (Monica) Huang',
         'hero.lab': 'ACTR 實驗室 · 香港科技大學',
-        'hero.location': '香港',
+        'hero.location': '中國香港',
         'apps.title': '我開發的平台',
         'apps.chatbot.title': 'Chatbot App',
         'apps.chatbot.desc': '教學與研究聊天機器人；頂尖大學採用。',
@@ -576,25 +616,28 @@ const HOME_I18N = {
         'sec.education': '教育背景', 'sec.presentations': '會議報告', 'sec.skills': '技能與語言', 'sec.honors': '榮譽與證書',
         'exp.hkust.org': '香港科技大學', 'exp.hkust.date': '2025年4月 — 至今',
         'exp.hkust.role': '香港 · 研究助理',
-        'exp.hkust.b1': '文獻綜述、Stata/R 定量分析、質性方法與量表開發等研究支援。',
-        'exp.hkust.b2': '協助 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">TLIP</a> 與 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 資助申請。',
-        'exp.hkust.b3': '開展機構（高校等）AI 應用的質性與定量研究。',
-        'exp.hkust.b4': '參與港科大圖書館 GenAI 文獻工具項目。',
-        'exp.hkust.b5': '建置並維護 ACTR 實驗室平台（Chatbot、群組聊天、囚徒困境遊戲）。',
+        'exp.hkust.b1': '開展機構 AI 應用的質性與定量研究，含文獻綜述、Stata/R 分析、質性方法與量表開發。',
+        'exp.hkust.b2': '協助獲批逾 <strong>100 萬港元</strong> <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/teaching-and-learning-innovation-projects" rel="noopener" target="_blank">Teaching and Learning Innovation Projects（TLIP，教學創新項目）</a> 與 <a href="https://cei.hkust.edu.hk/en-hk/projects-and-funding/large-teaching-and-learning-innovation-projects" rel="noopener" target="_blank">大型 TLIP</a> 資助。',
+        'res.hera.title': '「你永遠不知道它是否正確：」GenAI 時代學生對評價性判斷的理解探索',
+        'res.hera.status': 'HERA 年會 2026 · 會議海報',
+        'res.hera.b1': 'Kubert Tianhang Wang（第一作者）；黃馨潔（第二作者）。',
+        'res.hera.b2': '探索性質性研究（關鍵事件法；N = 10），探討學生在 GenAI 學習環境中的評價性判斷。',
+        'exp.hkust.b3': '參與港科大圖書館 <a href="https://library.hkust.edu.hk/news-events/news/mastering-research-genai-age" rel="noopener" target="_blank">GenAI 文獻工具項目</a>（Mastering Research in the GenAI Age）。',
+        'exp.hkust.b4': '建置並維護 ACTR 實驗室平台（Chatbot、群組聊天、囚徒困境遊戲）。',
         'exp.cmcc.org': '中國移動國際有限公司', 'exp.cmcc.date': '2021年9月 — 2024年12月',
         'exp.cmcc.role': '香港與深圳 · 資深技術顧問',
-        'exp.cmcc.b1': '數位轉型：AI、雲與 ERP。',
-        'exp.cmcc.b2': '協調 80+ 企業級基礎設施項目；內部數位化培訓講師。',
+        'exp.cmcc.b1': '協調 10+ 企業級基礎設施項目。',
+        'exp.cmcc.b2': '內部數位化管理培訓講師；推動 AI、雲與 ERP 數位轉型。',
         'interests.text': '人機互動',
         'res.trust.title': 'AI 使用與信任', 'res.trust.status': '投稿 OBHDP 審稿中',
         'res.trust.b1': '八項大規模研究（N = 4,994），探討 AI 使用如何影響信任。',
-        'res.trust.b2': '文獻、Stata/R 分析與量表開發。',
+        'res.trust.b2': '文獻與 Stata/R 分析。',
         'res.status.title': 'AI 與地位', 'res.status.label': '工作論文',
         'res.status.b1': '個人採用 AI 如何改變組織中的能力與地位感知。',
         'res.status.b2': '調查實驗：能力中介與規範同化調節。',
-        'res.mapper.title': 'AI 增強群組動態圖譜', 'res.mapper.label': '進行中項目',
+        'res.mapper.title': 'AI 增強群組動態圖譜', 'res.mapper.label': '工作論文',
         'res.mapper.b1': '基於 Transformer 的多方對話分析與三維「對話地形」視覺化。',
-        'res.esic.title': 'ESIC 量表（人際連結的情感支援）', 'res.esic.label': '進行中項目',
+        'res.esic.title': 'ESIC 量表（人際連結的情感支援）', 'res.esic.label': '工作論文',
         'res.esic.b1': '雙因子量表（線上舒適與 AI 陪伴）；EFA/CFA（N > 1,300）。',
         'edu.hkust.org': '香港科技大學', 'edu.hkust.date': '2025年 — 至今',
         'edu.hkust.degree': '旁聽 · 組織行為學（OB）、行為科學與談判',
@@ -602,8 +645,10 @@ const HOME_I18N = {
         'edu.ic.degree': '倫敦 · 通訊與訊號處理碩士',
         'edu.ic.b1': '論文：都卜勒雷達訊號處理。',
         'edu.leeds.org': '利茲大學', 'edu.leeds.date': '2016年9月 — 2020年7月',
-        'edu.leeds.degree': '電子電氣工程學士；西南交通大學雙學位',
-        'edu.leeds.b1': '研究：機器翻譯演進。',
+        'edu.leeds.degree': '英國利茲 · 電子電氣工程學士（BEng EEE）',
+        'edu.leeds.b1': '研究：機器翻譯評價 — 從統計模型到「Attention Is All You Need」。',
+        'edu.leeds.b2': '西南交通大學雙學位。',
+        'pres.p0': '報告：HERA 年會（2026）— GenAI 時代學生評價性判斷（會議海報）。',
         'pres.p1': '港科大 CEI：Reimagining Education（2025年11月）。',
         'pres.p2': '港科大 CEI：AI Sandbox for Educators（2025年4月）。',
         'pres.p3': '參會：第七屆亞洲管理研究聯盟 AMRC（2025年5月）。',
